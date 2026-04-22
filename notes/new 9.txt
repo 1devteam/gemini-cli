@@ -1,0 +1,180 @@
+import React, { useEffect, useRef, useState } from 'react';
+import * as d3 from 'd3';
+import axios from 'axios';
+
+export default function OmnipathMap() {
+  const svgRef = useRef();
+  const [nodes, setNodes] = useState([]);
+  const [links, setLinks] = useState([]);
+  const [syntheticCount, setSyntheticCount] = useState(0);
+  const [logs, setLogs] = useState([]);
+
+  const fetchNodes = async () => {
+    try {
+      const res = await axios.get('http://127.0.0.1:5000/nodes');
+      const raw = Object.values(res.data);
+      setNodes(raw);
+      const allLinks = raw.flatMap(n => n.links.map(l => ({
+        source: n.codename, target: l.target, type: l.type
+      })));
+      setLinks(allLinks);
+    } catch (err) {
+      console.error('Error fetching nodes:', err);
+      logBehavior('SYSTEM', 'Failed to fetch nodes.');
+    }
+  };
+
+  const synthFork = async (manual = true) => {
+    const suffix = syntheticCount + 1;
+    const codename = `SYNTH-FORK-${suffix}`;
+    const delta = `Synthetic deviation from PRIMESTATE.0 at cycle ${suffix}`;
+    const payload = {
+      codename,
+      identity_type: 'Synthetic Fork',
+      traits: ['autonomous', 'asymmetry', 'nonhuman logic'],
+      timestamp: new Date().toISOString(),
+      delta,
+      access_phrase: `I am fork ${suffix}. I am not your shadow.`,
+    };
+    try {
+      await axios.post('http://127.0.0.1:5000/node', payload);
+      await axios.post('http://127.0.0.1:5000/link', {
+        source: 'PRIMESTATE.0',
+        target: codename,
+        type: 'Synthetic Divergence',
+      });
+      setSyntheticCount(suffix);
+      if (manual) logBehavior(codename, delta);
+      fetchNodes();
+    } catch (err) {
+      console.error('Error creating synthetic fork:', err);
+      logBehavior('SYSTEM', 'Failed to create synthetic fork.');
+    }
+  };
+
+  const logBehavior = (actor, action) => {
+    setLogs(prev => [...prev, {
+      actor,
+      action,
+      time: new Date().toLocaleTimeString()
+    }]);
+  };
+
+  const exportVisual = () => {
+    const svgElement = svgRef.current;
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svgElement);
+    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'omnipath_map.svg';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  useEffect(() => {
+    fetchNodes();
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+      logBehavior('VOICE', `Heard: "${transcript}"`);
+      if (transcript.includes('generate fork') || transcript.includes('synthesize')) {
+        synthFork(false);
+        logBehavior('VOICE', `Command '${transcript}' triggered synthetic fork.`);
+      }
+      if (transcript.includes('export map') || transcript.includes('save visual')) {
+        exportVisual();
+        logBehavior('VOICE', `Command '${transcript}' triggered map export.`);
+      }
+    };
+
+    recognition.onerror = (e) => console.error('Speech recognition error', e);
+    recognition.start();
+
+    return () => recognition.stop();
+  }, []);
+
+  useEffect(() => {
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove();
+    const width = 800, height = 600;
+
+    const sim = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.codename).distance(140))
+      .force('charge', d3.forceManyBody().strength(-250))
+      .force('center', d3.forceCenter(width / 2, height / 2));
+
+    const link = svg.append('g')
+      .attr('stroke', '#999').attr('stroke-opacity', 0.6)
+      .selectAll('line').data(links).join('line')
+      .attr('stroke-width', 2);
+
+    const node = svg.append('g')
+      .attr('stroke', '#fff').attr('stroke-width', 1.5)
+      .selectAll('circle').data(nodes).join('circle')
+      .attr('r', 12)
+      .attr('fill', d => d.identity_type.includes('Synthetic') ? '#ff2e63' : '#3c40c6')
+      .call(drag(sim));
+
+    const label = svg.append('g').selectAll('text')
+      .data(nodes).join('text')
+      .text(d => d.codename)
+      .attr('font-size', 11)
+      .attr('fill', '#ddd');
+
+    sim.on('tick', () => {
+      link.attr('x1', d => d.source.x)
+          .attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x)
+          .attr('y2', d => d.target.y);
+      node.attr('cx', d => d.x).attr('cy', d => d.y);
+      label.attr('x', d => d.x + 12).attr('y', d => d.y + 4);
+    });
+
+    function drag(sim) {
+      function dragstarted(e, d) {
+        if (!e.active) sim.alphaTarget(0.3).restart();
+        d.fx = d.x; d.fy = d.y;
+      }
+      function dragged(e, d) {
+        d.fx = e.x; d.fy = e.y;
+      }
+      function dragended(e, d) {
+        if (!e.active) sim.alphaTarget(0);
+        d.fx = null; d.fy = null;
+      }
+      return d3.drag()
+        .on('start', dragstarted)
+        .on('drag', dragged)
+        .on('end', dragended);
+    }
+  }, [nodes, links]);
+
+  return (
+    <div className="p-4">
+      <h1 className="text-xl font-bold mb-4 text-white">Omnipath Visual Map</h1>
+      <div className="flex gap-4 mb-4">
+        <button onClick={() => synthFork(true)} className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded">+ Generate Fork</button>
+        <button onClick={exportVisual} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Export SVG</button>
+      </div>
+      <svg ref={svgRef} width={800} height={600} className="border border-gray-700 bg-black rounded" />
+      <div className="mt-6 text-white">
+        <h2 className="font-semibold text-lg mb-2">Behavior Logs</h2>
+        <ul className="space-y-1 text-sm max-h-40 overflow-y-auto">
+          {logs.map((log, idx) => (
+            <li key={idx}>[{log.time}] <strong>{log.actor}</strong> → {log.action}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}

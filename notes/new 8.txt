@@ -1,0 +1,6 @@
+🛠️ Shell Scripts
+File Name	Run Command	Edit Command
+cleanse_missions.sh	bash tools/cleanse_missions.sh	nano tools/cleanse_missions.sh
+deployOmni1.sh	bash tools/deployOmni1.sh	nano tools/deployOmni1.sh
+omni_broadcast.sh	bash tools/omni_broadcast.sh	nano tools/omni_broadcast.sh
+resurrect.sh	bash tools/resurrect.sh	nano tools/resurrect.sh

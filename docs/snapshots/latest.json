@@ -1,0 +1,446 @@
+{
+  "schema_version": "9.1",
+  "timestamp": "2026-01-27T10:39:50.190428+00:00",
+  "project": "gemini cli",
+  "cwd": "/home/inmoa/projects/gemini cli",
+  "environment": {
+    "python": "3.12.3",
+    "os": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39"
+  },
+  "summary": {
+    "files": 46,
+    "routes_static": 0,
+    "routes_dynamic": 0
+  },
+  "env_vars": {},
+  "dependency_graph": {},
+  "frontend": {
+    "dependencies": {
+      "@google/gemini-cli-core": "file:../core",
+      "@types/update-notifier": "^6.0.8",
+      "command-exists": "^1.2.9",
+      "diff": "^7.0.0",
+      "dotenv": "^16.6.1",
+      "execa": "^9.6.1",
+      "gaxios": "^6.1.1",
+      "glob": "^10.4.1",
+      "highlight.js": "^11.11.1",
+      "ink": "^6.0.1",
+      "ink-big-text": "^2.0.0",
+      "ink-gradient": "^3.0.0",
+      "ink-link": "^4.1.0",
+      "ink-select-input": "^6.2.0",
+      "ink-spinner": "^5.0.0",
+      "ink-text-input": "^6.0.0",
+      "lowlight": "^3.3.0",
+      "mime-types": "^2.1.4",
+      "open": "^10.1.2",
+      "react": "^19.1.0",
+      "read-package-up": "^11.0.0",
+      "shell-quote": "^1.8.2",
+      "simple-git": "^3.30.0",
+      "string-width": "^7.1.0",
+      "strip-ansi": "^7.1.0",
+      "strip-json-comments": "^3.1.1",
+      "update-notifier": "^7.3.1",
+      "yargs": "^17.7.2"
+    },
+    "devDependencies": {
+      "@babel/runtime": "^7.27.6",
+      "@testing-library/react": "^16.3.0",
+      "@types/command-exists": "^1.2.3",
+      "@types/diff": "^7.0.2",
+      "@types/dotenv": "^6.1.1",
+      "@types/node": "^20.19.30",
+      "@types/react": "^19.1.8",
+      "@types/react-dom": "^19.1.6",
+      "@types/semver": "^7.7.0",
+      "@types/shell-quote": "^1.7.5",
+      "@types/yargs": "^17.0.32",
+      "ink-testing-library": "^4.0.0",
+      "jsdom": "^26.1.0",
+      "prettier": "^3.4.2",
+      "typescript": "^5.9.3",
+      "vitest": "^3.1.1"
+    },
+    "scripts": {
+      "build": "tsc",
+      "build:watch": "tsc --watch",
+      "start": "node dist/index.js",
+      "dev": "npm run build && npm start",
+      "lint": "eslint . --ext .ts,.tsx",
+      "format": "prettier --write .",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit",
+      "audit": "npm audit",
+      "fix": "npm audit fix"
+    }
+  },
+  "config_files": {},
+  "docs_summary": [],
+  "docker_info": [],
+  "ci_cd_info": [],
+  "files_static": [
+    {
+      "file": "package-lock.json",
+      "checksum": "a0ca29ecb4e66eac6caa6353217eb038e4a8d68f59c100ccb07880c623cd4eed",
+      "lines": 5711,
+      "preview": "{\n  \"name\": \"@google/gemini-cli\",\n  \"version\": \"0.1.9\",\n  \"lockfileVersion\": 3,\n  \"requires\": true,\n  \"packages\": {\n    \"\": {\n      \"name\": \"@google/gemini-cli\",\n      \"version\": \"0.1.9\",\n      \"dependencies\": {\n        \"@google/gemini-cli-core\": \"file:../core\",\n        \"@types/update-notifier\": \"^6"
+    },
+    {
+      "file": "project_simulator_plugin.ts",
+      "checksum": "390e85ee2accc96140ea4128a08ca0b6f84f509e18584667601ee15de99b6d28",
+      "lines": 1062,
+      "imports_js": [
+        "path"
+      ]
+    },
+    {
+      "file": "plugin_context.ts",
+      "checksum": "3650f1b61df7891d90a74ca9553c741b96e0bc6c5c32fbf6837c123b423fcd74",
+      "lines": 263,
+      "imports_js": [
+        "fs",
+        "path"
+      ]
+    },
+    {
+      "file": "plugin_manager.ts",
+      "checksum": "9ab1227454bcd32024fb14f37bcb79aacfca0256e384ec77db1cc471d7cfd0d0",
+      "lines": 238,
+      "imports_js": [
+        "./plugin_interface.js",
+        "./plugin_loader.js",
+        "./plugin_registry.js",
+        "./plugin_context.js"
+      ]
+    },
+    {
+      "file": "prompt_engineering_plugin.ts",
+      "checksum": "a5304d1e5c6b18d176a6d1c57638cf6f6303669de9c66f5f2fa8efc2f450b3fb",
+      "lines": 115,
+      "imports_js": [
+        "path",
+        "execa",
+        "simple-git"
+      ]
+    },
+    {
+      "file": "plugin_interface.ts",
+      "checksum": "705e7524771dae4102c09cbb58c0d68b4e77d7333140a01d478ca22955309fe6",
+      "lines": 157,
+      "imports_js": []
+    },
+    {
+      "file": "tsconfig.json",
+      "checksum": "759f375e5f722e60f3a489583da7c5a3e25524f76dde34b3a5129e1a2b608de4",
+      "lines": 19,
+      "preview": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"node\",\n    \"outDir\": \"./dist\",\n    \"rootDir\": \".\",\n    \"strict\": true,\n    \"esModuleInterop\": true,\n    \"skipLibCheck\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"declaration\": true,\n    \""
+    },
+    {
+      "file": "example_plugin.ts",
+      "checksum": "70b8cfa771a91310772ecee4c5c3f6c0a786d573c691c6838dae7e6447b8162d",
+      "lines": 234,
+      "imports_js": []
+    },
+    {
+      "file": "test_plugin_system.ts",
+      "checksum": "05a566b690f49bb6130c8d90da5c668292293d86b0c9aad86f33144b8dd17f03",
+      "lines": 239,
+      "imports_js": [
+        "./plugin_manager.js",
+        "fs",
+        "path",
+        "../plugin_interface.js"
+      ]
+    },
+    {
+      "file": "plugin_registry.ts",
+      "checksum": "712516ed46b59e1afe1439347c2b3da776a71929d8bb98ca6912afb82ed984a2",
+      "lines": 214,
+      "imports_js": [
+        "./plugin_interface.js"
+      ]
+    },
+    {
+      "file": "plugin_loader.ts",
+      "checksum": "1b64250dd77f82999bb75665efaf8d3c98afff0ffb61331c938156787976f8b6",
+      "lines": 216,
+      "imports_js": [
+        "fs",
+        "path",
+        "./plugin_interface.js"
+      ]
+    },
+    {
+      "file": "integration_test.ts",
+      "checksum": "21c487f31dcc5b83c1fd8dcecb2802854ef75f4dbd23eb7aae175a6769635604",
+      "lines": 719,
+      "imports_js": [
+        "./plugin_manager.js",
+        "fs",
+        "path"
+      ]
+    },
+    {
+      "file": "package.json",
+      "checksum": "a70bf11b7ca2db3e344ca6b381becdd4866cd0d08d1df8ef6c72e73a8214e1f8",
+      "lines": 78,
+      "preview": "{\n  \"name\": \"gemini-cli-custom\",\n  \"version\": \"0.1.9-custom\",\n  \"description\": \"Custom fork of Gemini CLI with plugin system\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"main\": \"dist/index.js\",\n  \"bin\": {\n    \"gemini\": \"dist/index.js\"\n  },\n  \"scripts\": {\n    \"build\": \"tsc\",\n    \"build:watch\": \"tsc --"
+    },
+    {
+      "file": "gemini_cli_integration.ts",
+      "checksum": "8000c3aa104d32845cbc536bba0fc61136f1ad0558c7dc4d4484efd1ff881193",
+      "lines": 383,
+      "imports_js": [
+        "./plugin_manager.js",
+        "./plugin_interface.js",
+        "path"
+      ]
+    },
+    {
+      "file": "index.ts",
+      "checksum": "e0f8c77a2aae7830e0349b683c434e6e47b558188b6fcdc3564acc38eede0cb4",
+      "lines": 22,
+      "imports_js": [
+        "./plugin_manager.js",
+        "./gemini_cli_integration.js"
+      ]
+    },
+    {
+      "file": "dist/plugin_loader.js",
+      "checksum": "db84d1bc7738f5f1af317eec38567f97f19bf36d9e122b3027d76a62f66c333a",
+      "lines": 171,
+      "imports_js": [
+        "fs",
+        "path"
+      ]
+    },
+    {
+      "file": "dist/plugin_loader.d.ts",
+      "checksum": "9c010485a3f63520739f6e87319163d90423f49100bbf84dca05d401bcba989e",
+      "lines": 26,
+      "imports_js": [
+        "./plugin_interface.js"
+      ]
+    },
+    {
+      "file": "dist/integration_test.js",
+      "checksum": "b8b54d7e0d39263d7a4c2303268170425660818d6a7a469bdf86e0d3d502fb29",
+      "lines": 618,
+      "imports_js": [
+        "./plugin_manager.js",
+        "fs",
+        "path"
+      ]
+    },
+    {
+      "file": "dist/example_plugin.d.ts",
+      "checksum": "12cd93e8c9eb29ac2d2a24525f300edf959b828e7c31e00c78b089d841701756",
+      "lines": 3,
+      "imports_js": [
+        "./plugin_interface.js"
+      ]
+    },
+    {
+      "file": "dist/plugin_manager.d.ts",
+      "checksum": "e0eccfd7fc5d9a545f5221d582398964b67dbe109ef6ca985e2ba74372a99324",
+      "lines": 56,
+      "imports_js": [
+        "./plugin_interface.js",
+        "./plugin_loader.js",
+        "./plugin_registry.js"
+      ]
+    },
+    {
+      "file": "dist/project_simulator_plugin.d.ts",
+      "checksum": "ce5f1c97cb96ac3cd51c2224bc126b40b2a7da01b8f9c3f8d16315b67ba919cb",
+      "lines": 3,
+      "imports_js": [
+        "./plugin_interface.js"
+      ]
+    },
+    {
+      "file": "dist/prompt_engineering_plugin.d.ts",
+      "checksum": "21c795cdee6e9e70b5352f503066259a3e64df4465995c309ed0a62fd506c07a",
+      "lines": 3,
+      "imports_js": [
+        "./plugin_interface.js"
+      ]
+    },
+    {
+      "file": "dist/plugin_interface.js",
+      "checksum": "0a29d1f58ab9d37b38843c3c1637e2aa11e921a00681b5a259e54c927f3fa05c",
+      "lines": 6,
+      "imports_js": []
+    },
+    {
+      "file": "dist/integration_test.d.ts",
+      "checksum": "66d03fa70c86f661e06224a93b9b62c1fa72c06725b59a61c07014fbab9976c8",
+      "lines": 32,
+      "imports_js": []
+    },
+    {
+      "file": "dist/plugin_context.js",
+      "checksum": "309d4e4303723fe363e0aae0e213f7b270f0fb9fb301f9b9933ddff48cd6d778",
+      "lines": 224,
+      "imports_js": [
+        "fs",
+        "path"
+      ]
+    },
+    {
+      "file": "dist/test_plugin_system.js",
+      "checksum": "f6f34514b250a86ff0b30ad41b4c83f87ef9418799929c8e799d8e9c5aecef26",
+      "lines": 198,
+      "imports_js": [
+        "./plugin_manager.js",
+        "fs",
+        "path",
+        "../plugin_interface.js"
+      ]
+    },
+    {
+      "file": "dist/plugin_registry.js",
+      "checksum": "600d99cb85913ed56efda7de998473afdae0bf01817f8c9cc3483b6f3fb5f29a",
+      "lines": 150,
+      "imports_js": []
+    },
+    {
+      "file": "dist/project_simulator_plugin.js",
+      "checksum": "f5f7250680d9f46874a65d42a1f378b2e1a6cd7efc1ee893ba8abd69c9ff0ec9",
+      "lines": 946,
+      "imports_js": [
+        "path"
+      ]
+    },
+    {
+      "file": "dist/gemini_cli_integration.d.ts",
+      "checksum": "21cadbf2d7598366a84da0d738cc7e709888b621fe42ea8982d9552234cf717e",
+      "lines": 48,
+      "imports_js": [
+        "./plugin_manager.js"
+      ]
+    },
+    {
+      "file": "dist/test_plugin_system.d.ts",
+      "checksum": "2bc1a897df0d84a2137e2bc0cec04b35146f4d43e4bd0a229aa7c3aa0715b695",
+      "lines": 2,
+      "imports_js": []
+    },
+    {
+      "file": "dist/example_plugin.js",
+      "checksum": "082848ef8fe36b199af6635df334a72ca2c4e5c18d699e0735273731cd1382c7",
+      "lines": 204,
+      "imports_js": []
+    },
+    {
+      "file": "dist/plugin_interface.d.ts",
+      "checksum": "eabd60c90b680b8016896a2341fa2921913424f5cbf02b0a59ae93821bc6e85c",
+      "lines": 140,
+      "imports_js": []
+    },
+    {
+      "file": "dist/index.js",
+      "checksum": "269822e973d60c5d047fef2be2d22f7c947afbcbccff1a05ea872d79c6cfcde1",
+      "lines": 18,
+      "imports_js": [
+        "./plugin_manager.js"
+      ]
+    },
+    {
+      "file": "dist/plugin_manager.js",
+      "checksum": "7d51b8a89c0c87b591e2f4f381922d31aa4b257e8c6cb7516ad751ba97628768",
+      "lines": 161,
+      "imports_js": [
+        "./plugin_loader.js",
+        "./plugin_registry.js",
+        "./plugin_context.js"
+      ]
+    },
+    {
+      "file": "dist/plugin_registry.d.ts",
+      "checksum": "45252027819626440640625e08ffa272cc1ac11ef7ed67e72e5d9f678c41807f",
+      "lines": 40,
+      "imports_js": [
+        "./plugin_interface.js"
+      ]
+    },
+    {
+      "file": "dist/index.d.ts",
+      "checksum": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+      "lines": 1,
+      "imports_js": []
+    },
+    {
+      "file": "dist/gemini_cli_integration.js",
+      "checksum": "de0918ce14920d08a3e89cdaba9695f008d83489d4f90f289b30ca1ee542a3d8",
+      "lines": 295,
+      "imports_js": [
+        "./plugin_manager.js",
+        "path"
+      ]
+    },
+    {
+      "file": "dist/prompt_engineering_plugin.js",
+      "checksum": "aa189653aaa697e2c622b7ca4d32227efb88d61e653edf3f8104c04af6ab7a4f",
+      "lines": 94,
+      "imports_js": [
+        "path",
+        "simple-git"
+      ]
+    },
+    {
+      "file": "dist/plugin_context.d.ts",
+      "checksum": "5a6a51724077fd6cb052b342d0389cf914bad63f775a5c260917414c6c2f4125",
+      "lines": 40,
+      "imports_js": [
+        "./plugin_interface.js"
+      ]
+    },
+    {
+      "file": "notes/new 9.txt",
+      "checksum": "2686d22d3dd2b9c68a8d3829707fd42e8ea236c8d1388fa127ed6e634f9a5cce",
+      "lines": 180,
+      "preview": "import React, { useEffect, useRef, useState } from 'react';\nimport * as d3 from 'd3';\nimport axios from 'axios';\n\nexport default function OmnipathMap() {\n  const svgRef = useRef();\n  const [nodes, setNodes] = useState([]);\n  const [links, setLinks] = useState([]);\n  const [syntheticCount, setSynthet"
+    },
+    {
+      "file": "notes/new 8.txt",
+      "checksum": "b5a8f3c31f6ffe6eb105a84f80d4a0e1562ed9f35d6a8addff06cc62399f3fce",
+      "lines": 6,
+      "preview": "\ud83d\udee0\ufe0f Shell Scripts\nFile Name\tRun Command\tEdit Command\ncleanse_missions.sh\tbash tools/cleanse_missions.sh\tnano tools/cleanse_missions.sh\ndeployOmni1.sh\tbash tools/deployOmni1.sh\tnano tools/deployOmni1.sh\nomni_broadcast.sh\tbash tools/omni_broadcast.sh\tnano tools/omni_broadcast.sh\nresurrect.sh\tbash tools"
+    },
+    {
+      "file": "scripts/build_package.js",
+      "checksum": "89e3c14d4096cd56fe62b09eff564ed1d67e28f67992fc62b3308f775c60a741",
+      "lines": 16,
+      "imports_js": []
+    },
+    {
+      "file": "dist/scripts/build_package.d.ts",
+      "checksum": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+      "lines": 1,
+      "imports_js": []
+    },
+    {
+      "file": "dist/scripts/build_package.js",
+      "checksum": "6129a5a59e4b5bc2f999870b76375b58006e9c8c0b47f9ad200e0a15e0055e49",
+      "lines": 16,
+      "imports_js": []
+    },
+    {
+      "file": "docs/snapshots/latest.json",
+      "checksum": "9bac215dc48ac0c1ad9eef82fc9f2e2755ac809cbf533f1fd90013bf75e7112c",
+      "lines": 207,
+      "preview": "{\n  \"schema_version\": \"9.5\",\n  \"timestamp\": \"2025-11-18T11:58:47.530814+00:00\",\n  \"project\": \"gemini cli\",\n  \"cwd\": \"/home/inmoa/projects/gemini cli\",\n  \"scan_start\": \"/home/inmoa/projects/gemini cli\",\n  \"environment\": {\n    \"python\": \"3.12.3\",\n    \"os\": \"Linux-6.6.87.2-microsoft-standard-WSL2-x86_6"
+    },
+    {
+      "file": "docs/snapshots/snapshot_2025-11-18T11-58-47Z.json",
+      "checksum": "9bac215dc48ac0c1ad9eef82fc9f2e2755ac809cbf533f1fd90013bf75e7112c",
+      "lines": 207,
+      "preview": "{\n  \"schema_version\": \"9.5\",\n  \"timestamp\": \"2025-11-18T11:58:47.530814+00:00\",\n  \"project\": \"gemini cli\",\n  \"cwd\": \"/home/inmoa/projects/gemini cli\",\n  \"scan_start\": \"/home/inmoa/projects/gemini cli\",\n  \"environment\": {\n    \"python\": \"3.12.3\",\n    \"os\": \"Linux-6.6.87.2-microsoft-standard-WSL2-x86_6"
+    }
+  ],
+  "runtime_dynamic": {}
+}

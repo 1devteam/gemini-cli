@@ -1,0 +1,207 @@
+{
+  "schema_version": "9.5",
+  "timestamp": "2025-11-18T11:58:47.530814+00:00",
+  "project": "gemini cli",
+  "cwd": "/home/inmoa/projects/gemini cli",
+  "scan_start": "/home/inmoa/projects/gemini cli",
+  "environment": {
+    "python": "3.12.3",
+    "os": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39"
+  },
+  "summary": {
+    "files": 14,
+    "routes_static": 0,
+    "routes_dynamic": 0,
+    "py_errors": 0,
+    "init_missing": 0,
+    "duplicate_files": 0
+  },
+  "env_vars": {},
+  "dependency_graph": {},
+  "frontend": {
+    "dependencies": {
+      "@google/gemini-cli-core": "file:../core",
+      "@types/update-notifier": "^6.0.8",
+      "command-exists": "^1.2.9",
+      "diff": "^7.0.0",
+      "dotenv": "^16.6.1",
+      "gaxios": "^6.1.1",
+      "glob": "^10.4.1",
+      "highlight.js": "^11.11.1",
+      "ink": "^6.0.1",
+      "ink-big-text": "^2.0.0",
+      "ink-gradient": "^3.0.0",
+      "ink-link": "^4.1.0",
+      "ink-select-input": "^6.2.0",
+      "ink-spinner": "^5.0.0",
+      "ink-text-input": "^6.0.0",
+      "lowlight": "^3.3.0",
+      "mime-types": "^2.1.4",
+      "open": "^10.1.2",
+      "react": "^19.1.0",
+      "read-package-up": "^11.0.0",
+      "shell-quote": "^1.8.2",
+      "string-width": "^7.1.0",
+      "strip-ansi": "^7.1.0",
+      "strip-json-comments": "^3.1.1",
+      "update-notifier": "^7.3.1",
+      "yargs": "^17.7.2"
+    },
+    "devDependencies": {
+      "@babel/runtime": "^7.27.6",
+      "@testing-library/react": "^16.3.0",
+      "@types/command-exists": "^1.2.3",
+      "@types/diff": "^7.0.2",
+      "@types/dotenv": "^6.1.1",
+      "@types/node": "^20.11.24",
+      "@types/react": "^19.1.8",
+      "@types/react-dom": "^19.1.6",
+      "@types/semver": "^7.7.0",
+      "@types/shell-quote": "^1.7.5",
+      "@types/yargs": "^17.0.32",
+      "ink-testing-library": "^4.0.0",
+      "jsdom": "^26.1.0",
+      "pretty-format": "^30.0.2",
+      "react-dom": "^19.1.0",
+      "typescript": "^5.3.3",
+      "vitest": "^3.1.1"
+    },
+    "scripts": {
+      "build": "node ../../scripts/build_package.js",
+      "start": "node dist/index.js",
+      "debug": "node --inspect-brk dist/index.js",
+      "lint": "eslint . --ext .ts,.tsx",
+      "format": "prettier --write .",
+      "test": "vitest run",
+      "test:ci": "vitest run --coverage",
+      "typecheck": "tsc --noEmit"
+    }
+  },
+  "config_files": {},
+  "docs_summary": [],
+  "docker_info": [],
+  "ci_cd_info": [],
+  "files_static": [
+    {
+      "file": "project_simulator_plugin.ts",
+      "checksum": "390e85ee2accc96140ea4128a08ca0b6f84f509e18584667601ee15de99b6d28",
+      "lines": 1062,
+      "imports_js": [
+        "path"
+      ]
+    },
+    {
+      "file": "new 9.txt",
+      "checksum": "2686d22d3dd2b9c68a8d3829707fd42e8ea236c8d1388fa127ed6e634f9a5cce",
+      "lines": 180,
+      "preview": "import React, { useEffect, useRef, useState } from 'react';\nimport * as d3 from 'd3';\nimport axios from 'axios';\n\nexport default function OmnipathMap() {\n  const svgRef = useRef();\n  const [nodes, setNodes] = useState([]);\n  const [links, setLinks] = useState([]);\n  const [syntheticCount, setSynthet"
+    },
+    {
+      "file": "plugin_context.ts",
+      "checksum": "3650f1b61df7891d90a74ca9553c741b96e0bc6c5c32fbf6837c123b423fcd74",
+      "lines": 263,
+      "imports_js": [
+        "fs",
+        "path"
+      ]
+    },
+    {
+      "file": "plugin_manager.ts",
+      "checksum": "9ab1227454bcd32024fb14f37bcb79aacfca0256e384ec77db1cc471d7cfd0d0",
+      "lines": 238,
+      "imports_js": [
+        "./plugin_interface.js",
+        "./plugin_loader.js",
+        "./plugin_registry.js",
+        "./plugin_context.js"
+      ]
+    },
+    {
+      "file": "prompt_engineering_plugin.ts",
+      "checksum": "38b168cbcb84f2c223318a379addc012e29c0f6d9a9db34fbe683969da0287eb",
+      "lines": 786,
+      "imports_js": [
+        "path"
+      ]
+    },
+    {
+      "file": "plugin_interface.ts",
+      "checksum": "705e7524771dae4102c09cbb58c0d68b4e77d7333140a01d478ca22955309fe6",
+      "lines": 157,
+      "imports_js": []
+    },
+    {
+      "file": "example_plugin.ts",
+      "checksum": "70b8cfa771a91310772ecee4c5c3f6c0a786d573c691c6838dae7e6447b8162d",
+      "lines": 234,
+      "imports_js": []
+    },
+    {
+      "file": "test_plugin_system.ts",
+      "checksum": "05a566b690f49bb6130c8d90da5c668292293d86b0c9aad86f33144b8dd17f03",
+      "lines": 239,
+      "imports_js": [
+        "./plugin_manager.js",
+        "fs",
+        "path",
+        "../plugin_interface.js"
+      ]
+    },
+    {
+      "file": "plugin_registry.ts",
+      "checksum": "712516ed46b59e1afe1439347c2b3da776a71929d8bb98ca6912afb82ed984a2",
+      "lines": 214,
+      "imports_js": [
+        "./plugin_interface.js"
+      ]
+    },
+    {
+      "file": "plugin_loader.ts",
+      "checksum": "1b64250dd77f82999bb75665efaf8d3c98afff0ffb61331c938156787976f8b6",
+      "lines": 216,
+      "imports_js": [
+        "fs",
+        "path",
+        "./plugin_interface.js"
+      ]
+    },
+    {
+      "file": "new 8.txt",
+      "checksum": "b5a8f3c31f6ffe6eb105a84f80d4a0e1562ed9f35d6a8addff06cc62399f3fce",
+      "lines": 6,
+      "preview": "\ud83d\udee0\ufe0f Shell Scripts\nFile Name\tRun Command\tEdit Command\ncleanse_missions.sh\tbash tools/cleanse_missions.sh\tnano tools/cleanse_missions.sh\ndeployOmni1.sh\tbash tools/deployOmni1.sh\tnano tools/deployOmni1.sh\nomni_broadcast.sh\tbash tools/omni_broadcast.sh\tnano tools/omni_broadcast.sh\nresurrect.sh\tbash tools"
+    },
+    {
+      "file": "integration_test.ts",
+      "checksum": "21c487f31dcc5b83c1fd8dcecb2802854ef75f4dbd23eb7aae175a6769635604",
+      "lines": 719,
+      "imports_js": [
+        "./plugin_manager.js",
+        "fs",
+        "path"
+      ]
+    },
+    {
+      "file": "package.json",
+      "checksum": "f3e8f0fc39d4f5a78dad075b566421cf5b0449febfe2f970a743459178d01d31",
+      "lines": 80,
+      "preview": "{\n  \"name\": \"@google/gemini-cli\",\n  \"version\": \"0.1.9\",\n  \"description\": \"Gemini CLI\",\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"git+https://github.com/google-gemini/gemini-cli.git\"\n  },\n  \"type\": \"module\",\n  \"main\": \"dist/index.js\",\n  \"bin\": {\n    \"gemini\": \"dist/index.js\"\n  },\n  \"scripts\": "
+    },
+    {
+      "file": "gemini_cli_integration.ts",
+      "checksum": "8000c3aa104d32845cbc536bba0fc61136f1ad0558c7dc4d4484efd1ff881193",
+      "lines": 383,
+      "imports_js": [
+        "./plugin_manager.js",
+        "./plugin_interface.js",
+        "path"
+      ]
+    }
+  ],
+  "runtime_dynamic": {},
+  "integrity": {
+    "syntax_errors": [],
+    "missing_init": [],
+    "duplicates": []
+  }
+}
