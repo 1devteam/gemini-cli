@@ -1,100 +1,105 @@
-import { IPlugin, IPluginCommand, IPluginContext } from './plugin_interface.js';
+import {
+  IPlugin,
+  IPluginCommand,
+  IPluginContext,
+  IPluginHealth,
+  PluginLifecycleStatus,
+} from './plugin_interface.js';
+
+export interface IRegisteredPluginState {
+  plugin: IPlugin;
+  status: PluginLifecycleStatus;
+  enabled: boolean;
+  commandNames: string[];
+  health?: IPluginHealth;
+  lastError?: string;
+}
 
 export interface IPluginRegistry {
-  /** Register a plugin */
-  registerPlugin(plugin: IPlugin): Promise<void>;
-  
-  /** Unregister a plugin */
+  registerPlugin(plugin: IPlugin, status?: PluginLifecycleStatus): Promise<void>;
   unregisterPlugin(pluginId: string): Promise<void>;
-  
-  /** Get all registered plugins */
   getPlugins(): IPlugin[];
-  
-  /** Get a specific plugin by ID */
   getPlugin(id: string): IPlugin | undefined;
-  
-  /** Get all available commands */
   getCommands(): Map<string, IPluginCommand>;
-  
-  /** Get command by name */
   getCommand(name: string): IPluginCommand | undefined;
-  
-  /** Execute a command */
-  executeCommand(commandName: string, args: any, context: IPluginContext): Promise<any>;
-  
-  /** Check if a command exists */
+  executeCommand(
+    commandName: string,
+    args: Record<string, unknown>,
+    context: IPluginContext,
+  ): Promise<unknown>;
   hasCommand(name: string): boolean;
-  
-  /** Get all commands for a specific plugin */
   getPluginCommands(pluginId: string): IPluginCommand[];
-
-  /** List all available commands */
   listCommands(): { command: string; plugin: string; description: string }[];
+  getPluginState(pluginId: string): IRegisteredPluginState | undefined;
+  listPluginStates(): IRegisteredPluginState[];
+  updatePluginStatus(pluginId: string, status: PluginLifecycleStatus, lastError?: string): void;
+  setPluginHealth(pluginId: string, health: IPluginHealth): void;
+  enablePlugin(pluginId: string): void;
+  disablePlugin(pluginId: string): void;
 }
 
 export class PluginRegistry implements IPluginRegistry {
   private plugins: Map<string, IPlugin> = new Map();
   private commands: Map<string, IPluginCommand> = new Map();
   private commandToPlugin: Map<string, string> = new Map();
+  private pluginStates: Map<string, IRegisteredPluginState> = new Map();
 
-  async registerPlugin(plugin: IPlugin): Promise<void> {
+  async registerPlugin(plugin: IPlugin, status: PluginLifecycleStatus = 'initialized'): Promise<void> {
     const pluginId = plugin.metadata.id;
-    
-    // Check if plugin is already registered
+
     if (this.plugins.has(pluginId)) {
       throw new Error(`Plugin '${pluginId}' is already registered`);
     }
 
-    // Initialize the plugin
-    // Note: We'll need to pass a proper context here
-    // For now, we'll skip initialization and handle it in the main CLI
-    
-    // Register the plugin
-    this.plugins.set(pluginId, plugin);
-    
-    // Register plugin commands
     const commands = plugin.getCommands();
-    for (const command of commands) {
-      await this.registerCommand(command, pluginId);
+    const registeredNames: string[] = [];
+
+    try {
+      for (const command of commands) {
+        const names = await this.registerCommand(command, pluginId);
+        registeredNames.push(...names);
+      }
+    } catch (error) {
+      for (const name of registeredNames) {
+        this.commands.delete(name);
+        this.commandToPlugin.delete(name);
+      }
+      throw error;
     }
-    
-    console.log(`Plugin '${plugin.metadata.name}' (${pluginId}) registered successfully`);
+
+    this.plugins.set(pluginId, plugin);
+    this.pluginStates.set(pluginId, {
+      plugin,
+      status,
+      enabled: plugin.metadata.enabledByDefault ?? true,
+      commandNames: registeredNames,
+    });
   }
 
-  private async registerCommand(command: IPluginCommand, pluginId: string): Promise<void> {
+  private async registerCommand(command: IPluginCommand, pluginId: string): Promise<string[]> {
     const commandName = command.name;
-    
-    // Check for command name conflicts
-    if (this.commands.has(commandName)) {
-      const existingPluginId = this.commandToPlugin.get(commandName);
-      throw new Error(
-        `Command '${commandName}' conflicts with existing command from plugin '${existingPluginId}'`
-      );
-    }
+    const names = [commandName, ...(command.aliases ?? [])];
 
-    // Check aliases for conflicts
-    if (command.aliases) {
-      for (const alias of command.aliases) {
-        if (this.commands.has(alias)) {
-          const existingPluginId = this.commandToPlugin.get(alias);
-          throw new Error(
-            `Command alias '${alias}' conflicts with existing command from plugin '${existingPluginId}'`
-          );
-        }
+    for (const name of names) {
+      if (this.commands.has(name)) {
+        const existingPluginId = this.commandToPlugin.get(name);
+        throw new Error(
+          `Command '${name}' conflicts with existing command from plugin '${existingPluginId}'`,
+        );
       }
     }
 
-    // Register the command
     this.commands.set(commandName, command);
     this.commandToPlugin.set(commandName, pluginId);
 
-    // Register aliases
     if (command.aliases) {
       for (const alias of command.aliases) {
         this.commands.set(alias, command);
         this.commandToPlugin.set(alias, pluginId);
       }
     }
+
+    return names;
   }
 
   async unregisterPlugin(pluginId: string): Promise<void> {
@@ -103,28 +108,27 @@ export class PluginRegistry implements IPluginRegistry {
       throw new Error(`Plugin '${pluginId}' is not registered`);
     }
 
-    // Unregister all commands from this plugin
-    const commandsToRemove: string[] = [];
-    for (const [commandName, commandPluginId] of this.commandToPlugin.entries()) {
-      if (commandPluginId === pluginId) {
-        commandsToRemove.push(commandName);
-      }
-    }
+    const state = this.pluginStates.get(pluginId);
+    const commandNames = state?.commandNames ?? [];
 
-    for (const commandName of commandsToRemove) {
+    for (const commandName of commandNames) {
       this.commands.delete(commandName);
       this.commandToPlugin.delete(commandName);
     }
 
-    // Cleanup plugin if it has a cleanup method
     if (plugin.cleanup) {
       await plugin.cleanup();
     }
 
-    // Remove plugin
     this.plugins.delete(pluginId);
-    
-    console.log(`Plugin '${plugin.metadata.name}' (${pluginId}) unregistered successfully`);
+    this.pluginStates.set(pluginId, {
+      plugin,
+      status: 'unloaded',
+      enabled: false,
+      commandNames: [],
+      health: state?.health,
+      lastError: state?.lastError,
+    });
   }
 
   getPlugins(): IPlugin[] {
@@ -147,7 +151,11 @@ export class PluginRegistry implements IPluginRegistry {
     return this.commands.has(name);
   }
 
-  async executeCommand(commandName: string, args: any, context: IPluginContext): Promise<any> {
+  async executeCommand(
+    commandName: string,
+    args: Record<string, unknown>,
+    context: IPluginContext,
+  ): Promise<unknown> {
     const command = this.commands.get(commandName);
     if (!command) {
       throw new Error(`Command '${commandName}' not found`);
@@ -163,36 +171,28 @@ export class PluginRegistry implements IPluginRegistry {
       throw new Error(`Plugin '${pluginId}' not found`);
     }
 
-    try {
-      console.log(`Executing command '${commandName}' from plugin '${plugin.metadata.name}'`);
-      const result = await command.handler(args, context);
-      return result;
-    } catch (error) {
-      console.error(`Error executing command '${commandName}':`, error);
-      throw error;
+    const state = this.pluginStates.get(pluginId);
+    if (!state) {
+      throw new Error(`Plugin state for '${pluginId}' not found`);
     }
+
+    if (!state.enabled || state.status !== 'active') {
+      throw new Error(`Plugin '${pluginId}' is not active`);
+    }
+
+    return await command.handler(args, context);
   }
 
-  // Utility methods
   getPluginCommands(pluginId: string): IPluginCommand[] {
     const commands: IPluginCommand[] = [];
     for (const [commandName, command] of this.commands.entries()) {
       if (this.commandToPlugin.get(commandName) === pluginId) {
-        // Avoid duplicates (aliases point to same command object)
         if (!commands.includes(command)) {
           commands.push(command);
         }
       }
     }
     return commands;
-  }
-
-  getCommandsByPlugin(): Map<string, IPluginCommand[]> {
-    const result = new Map<string, IPluginCommand[]>();
-    for (const plugin of this.plugins.values()) {
-      result.set(plugin.metadata.id, this.getPluginCommands(plugin.metadata.id));
-    }
-    return result;
   }
 
   listCommands(): { command: string; plugin: string; description: string }[] {
@@ -202,19 +202,69 @@ export class PluginRegistry implements IPluginRegistry {
     for (const [commandName, command] of this.commands.entries()) {
       if (!processedCommands.has(command)) {
         const pluginId = this.commandToPlugin.get(commandName);
-        const plugin = this.plugins.get(pluginId!);
-        
+        const plugin = pluginId ? this.plugins.get(pluginId) : undefined;
         result.push({
           command: command.name,
           plugin: plugin?.metadata.name || pluginId || 'Unknown',
-          description: command.description
+          description: command.description,
         });
-        
         processedCommands.add(command);
       }
     }
 
     return result.sort((a, b) => a.command.localeCompare(b.command));
   }
-}
 
+  getPluginState(pluginId: string): IRegisteredPluginState | undefined {
+    return this.pluginStates.get(pluginId);
+  }
+
+  listPluginStates(): IRegisteredPluginState[] {
+    return Array.from(this.pluginStates.values());
+  }
+
+  updatePluginStatus(pluginId: string, status: PluginLifecycleStatus, lastError?: string): void {
+    const state = this.pluginStates.get(pluginId);
+    if (!state) {
+      throw new Error(`Plugin state for '${pluginId}' not found`);
+    }
+
+    state.status = status;
+    state.lastError = lastError;
+    this.pluginStates.set(pluginId, state);
+  }
+
+  setPluginHealth(pluginId: string, health: IPluginHealth): void {
+    const state = this.pluginStates.get(pluginId);
+    if (!state) {
+      throw new Error(`Plugin state for '${pluginId}' not found`);
+    }
+
+    state.health = health;
+    this.pluginStates.set(pluginId, state);
+  }
+
+  enablePlugin(pluginId: string): void {
+    const state = this.pluginStates.get(pluginId);
+    if (!state) {
+      throw new Error(`Plugin state for '${pluginId}' not found`);
+    }
+
+    state.enabled = true;
+    if (state.status === 'disabled') {
+      state.status = 'active';
+    }
+    this.pluginStates.set(pluginId, state);
+  }
+
+  disablePlugin(pluginId: string): void {
+    const state = this.pluginStates.get(pluginId);
+    if (!state) {
+      throw new Error(`Plugin state for '${pluginId}' not found`);
+    }
+
+    state.enabled = false;
+    state.status = 'disabled';
+    this.pluginStates.set(pluginId, state);
+  }
+}
