@@ -22,8 +22,8 @@ class PromptEngineeringPlugin implements IPlugin {
     description: 'Structured prompt-to-spec generation and safe project scaffolding support',
     author: 'Gemini CLI Team',
     minCliVersion: '0.2.0',
-    category: 'generation',
-    capabilities: ['prompt-to-spec', 'project-scaffolding', 'documentation'],
+    category: 'spec',
+    capabilities: ['commands', 'spec-generation', 'reporting'],
     permissions: ['project:read', 'project:write'],
   };
 

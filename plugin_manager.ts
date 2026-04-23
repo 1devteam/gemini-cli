@@ -19,6 +19,7 @@ export interface IPluginManager {
   getLoader(): IPluginLoader;
   executeCommand(commandName: string, args: Record<string, unknown>): Promise<unknown>;
   listCommands(): { command: string; plugin: string; description: string }[];
+  hasCommand(commandName: string): boolean;
   getContext(): IPluginContext;
   getPlugins(): IPlugin[];
   getPlugin(id: string): IPlugin | undefined;
@@ -184,6 +185,10 @@ export class PluginManager implements IPluginManager {
 
   listCommands(): { command: string; plugin: string; description: string }[] {
     return this.registry.listCommands();
+  }
+
+  hasCommand(commandName: string): boolean {
+    return this.registry.listCommands().some((entry) => entry.command === commandName);
   }
 
   getContext(): IPluginContext {

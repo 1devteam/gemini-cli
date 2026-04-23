@@ -37,7 +37,7 @@ class ExamplePlugin implements IPlugin {
     author: 'Gemini CLI Team',
     minCliVersion: '0.2.0',
     category: 'utility',
-    capabilities: ['commands', 'filesystem-inspection', 'sample-generation'],
+    capabilities: ['commands', 'analysis', 'spec-generation'],
     permissions: ['project:read', 'project:write'],
   };
 
