@@ -1,11 +1,12 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { 
-  IPluginContext, 
-  IGeminiAPI, 
-  IFileSystemAPI, 
-  ILogger, 
-  IProjectContext 
+import {
+  IFileSystemAPI,
+  IGeminiAPI,
+  ILogger,
+  IPluginContext,
+  IProjectContext,
+  PluginPermission,
 } from './plugin_interface.js';
 
 export class PluginContext implements IPluginContext {
@@ -13,15 +14,17 @@ export class PluginContext implements IPluginContext {
   public fs: IFileSystemAPI;
   public logger: ILogger;
   public cwd: string;
-  public config: any;
+  public config: Record<string, unknown>;
   public project?: IProjectContext;
+  public permissions?: PluginPermission[];
 
   constructor(
     geminiAPI: IGeminiAPI,
     logger: ILogger,
     cwd: string,
-    config: any,
-    project?: IProjectContext
+    config: Record<string, unknown>,
+    project?: IProjectContext,
+    permissions?: PluginPermission[],
   ) {
     this.gemini = geminiAPI;
     this.fs = new FileSystemAPI();
@@ -29,51 +32,58 @@ export class PluginContext implements IPluginContext {
     this.cwd = cwd;
     this.config = config;
     this.project = project;
+    this.permissions = permissions;
   }
 }
 
 export class GeminiAPI implements IGeminiAPI {
-  private geminiCore: any; // This would be the actual Gemini core instance
+  private geminiCore: unknown;
 
-  constructor(geminiCore: any) {
+  constructor(geminiCore: unknown) {
     this.geminiCore = geminiCore;
   }
 
-  async generateText(prompt: string, options?: any): Promise<string> {
-    // This would integrate with the actual Gemini API
-    // For now, we'll provide a placeholder implementation
+  async generateText(prompt: string, options?: unknown): Promise<string> {
     try {
-      // Assuming the geminiCore has a generateText method
-      if (this.geminiCore && this.geminiCore.generateText) {
-        return await this.geminiCore.generateText(prompt, options);
+      const core = this.geminiCore as { generateText?: (prompt: string, options?: unknown) => Promise<string> };
+      if (core?.generateText) {
+        return await core.generateText(prompt, options);
       }
-      
-      // Fallback implementation
+
       throw new Error('Gemini API not available');
     } catch (error) {
-      throw new Error(`Failed to generate text: ${error}`);
+      throw new Error(`Failed to generate text: ${String(error)}`);
     }
   }
 
-  async generateCode(prompt: string, language?: string, options?: any): Promise<string> {
-    const codePrompt = language 
+  async generateCode(prompt: string, language?: string, options?: unknown): Promise<string> {
+    const codePrompt = language
       ? `Generate ${language} code for the following request:\n\n${prompt}`
       : `Generate code for the following request:\n\n${prompt}`;
-    
+
     return this.generateText(codePrompt, options);
   }
 
-  async chat(messages: any[], options?: any): Promise<string> {
+  async chat(messages: unknown[], options?: unknown): Promise<string> {
     try {
-      if (this.geminiCore && this.geminiCore.chat) {
-        return await this.geminiCore.chat(messages, options);
+      const core = this.geminiCore as { chat?: (messages: unknown[], options?: unknown) => Promise<string> };
+      if (core?.chat) {
+        return await core.chat(messages, options);
       }
-      
-      // Fallback: convert messages to a single prompt
-      const prompt = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n');
+
+      const prompt = messages
+        .map((msg) => {
+          if (typeof msg === 'object' && msg !== null && 'role' in msg && 'content' in msg) {
+            const entry = msg as { role: string; content: string };
+            return `${entry.role}: ${entry.content}`;
+          }
+          return String(msg);
+        })
+        .join('\n');
+
       return this.generateText(prompt, options);
     } catch (error) {
-      throw new Error(`Failed to chat: ${error}`);
+      throw new Error(`Failed to chat: ${String(error)}`);
     }
   }
 }
@@ -83,19 +93,17 @@ export class FileSystemAPI implements IFileSystemAPI {
     try {
       return await fs.readFile(filePath, 'utf-8');
     } catch (error) {
-      throw new Error(`Failed to read file ${filePath}: ${error}`);
+      throw new Error(`Failed to read file ${filePath}: ${String(error)}`);
     }
   }
 
   async writeFile(filePath: string, content: string): Promise<void> {
     try {
-      // Ensure directory exists
       const dir = path.dirname(filePath);
       await fs.mkdir(dir, { recursive: true });
-      
       await fs.writeFile(filePath, content, 'utf-8');
     } catch (error) {
-      throw new Error(`Failed to write file ${filePath}: ${error}`);
+      throw new Error(`Failed to write file ${filePath}: ${String(error)}`);
     }
   }
 
@@ -112,7 +120,7 @@ export class FileSystemAPI implements IFileSystemAPI {
     try {
       await fs.mkdir(dirPath, { recursive: true });
     } catch (error) {
-      throw new Error(`Failed to create directory ${dirPath}: ${error}`);
+      throw new Error(`Failed to create directory ${dirPath}: ${String(error)}`);
     }
   }
 
@@ -120,15 +128,15 @@ export class FileSystemAPI implements IFileSystemAPI {
     try {
       return await fs.readdir(dirPath);
     } catch (error) {
-      throw new Error(`Failed to read directory ${dirPath}: ${error}`);
+      throw new Error(`Failed to read directory ${dirPath}: ${String(error)}`);
     }
   }
 
-  async stat(filePath: string): Promise<any> {
+  async stat(filePath: string): Promise<unknown> {
     try {
       return await fs.stat(filePath);
     } catch (error) {
-      throw new Error(`Failed to get stats for ${filePath}: ${error}`);
+      throw new Error(`Failed to get stats for ${filePath}: ${String(error)}`);
     }
   }
 }
@@ -145,19 +153,19 @@ export class PluginLogger implements ILogger {
     return `[${timestamp}] [${level.toUpperCase()}] [${this.pluginId}] ${message}`;
   }
 
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     console.log(this.formatMessage('info', message), ...args);
   }
 
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     console.warn(this.formatMessage('warn', message), ...args);
   }
 
-  error(message: string, ...args: any[]): void {
+  error(message: string, ...args: unknown[]): void {
     console.error(this.formatMessage('error', message), ...args);
   }
 
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
       console.debug(this.formatMessage('debug', message), ...args);
     }
@@ -168,16 +176,11 @@ export class ProjectContextBuilder {
   static async buildProjectContext(rootPath: string): Promise<IProjectContext | undefined> {
     try {
       const context: IProjectContext = {
-        root: rootPath
+        root: rootPath,
       };
 
-      // Detect project type
       context.type = await this.detectProjectType(rootPath);
-
-      // Load project configuration
-      context.config = await this.loadProjectConfig(rootPath, context.type);
-
-      // Get Git information
+      context.config = await this.loadProjectConfig(rootPath);
       context.git = await this.getGitInfo(rootPath);
 
       return context;
@@ -206,58 +209,75 @@ export class ProjectContextBuilder {
         await fs.access(path.join(rootPath, indicator.file));
         return indicator.type;
       } catch {
-        // File doesn't exist, continue
+        // continue
       }
     }
 
     return undefined;
   }
 
-  private static async loadProjectConfig(rootPath: string, projectType?: string): Promise<any> {
+  private static async loadProjectConfig(rootPath: string): Promise<Record<string, unknown>> {
     const configFiles = [
       'package.json',
       'pyproject.toml',
       'Cargo.toml',
       'go.mod',
       '.gemini-cli.json',
-      'gemini-cli.config.js'
+      'gemini-cli.config.js',
     ];
 
     for (const configFile of configFiles) {
       try {
         const configPath = path.join(rootPath, configFile);
         await fs.access(configPath);
-        
+
         if (configFile.endsWith('.json')) {
           const content = await fs.readFile(configPath, 'utf-8');
-          return JSON.parse(content);
+          return JSON.parse(content) as Record<string, unknown>;
         }
-        // For other file types, we'd need specific parsers
-        // For now, just return the file path
+
         return { configFile: configPath };
       } catch {
-        // File doesn't exist or can't be parsed, continue
+        // continue
       }
     }
 
     return {};
   }
 
-  private static async getGitInfo(rootPath: string): Promise<any> {
+  private static async getGitInfo(rootPath: string): Promise<IProjectContext['git'] | undefined> {
     try {
-      // Check if it's a git repository
-      await fs.access(path.join(rootPath, '.git'));
-      
-      // For a full implementation, we'd use a git library like simple-git
-      // For now, return a placeholder
-      return {
-        branch: 'main', // Would get actual branch
-        remote: 'origin', // Would get actual remote
-        lastCommit: 'abc123' // Would get actual last commit hash
-      };
+      const gitDir = path.join(rootPath, '.git');
+      await fs.access(gitDir);
+
+      const headPath = path.join(gitDir, 'HEAD');
+      const headContent = await fs.readFile(headPath, 'utf-8');
+      const headValue = headContent.trim();
+
+      let branch = 'detached';
+      let lastCommit = headValue;
+
+      if (headValue.startsWith('ref: ')) {
+        const ref = headValue.replace('ref: ', '');
+        branch = ref.split('/').pop() ?? 'unknown';
+        const refPath = path.join(gitDir, ref);
+        lastCommit = (await fs.readFile(refPath, 'utf-8')).trim();
+      }
+
+      let remote = 'unknown';
+      try {
+        const configText = await fs.readFile(path.join(gitDir, 'config'), 'utf-8');
+        const match = configText.match(/\[remote "origin"\][\s\S]*?url = (.+)/);
+        if (match?.[1]) {
+          remote = match[1].trim();
+        }
+      } catch {
+        // ignore remote parse issues
+      }
+
+      return { branch, remote, lastCommit };
     } catch {
       return undefined;
     }
   }
 }
-
