@@ -1,7 +1,7 @@
 {
-  "name": "gemini-cli-custom",
-  "version": "0.1.9-custom",
-  "description": "Custom Gemini CLI fork with unrestricted plugin system for violent/illegal/NSFW simulations",
+  "name": "gemini-cli",
+  "version": "0.2.0-powerbuild",
+  "description": "Plugin-driven engineering CLI for prompt-to-spec generation, project analysis, dependency and environment modeling, deterministic simulation, repair planning, and validation workflows.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -9,15 +9,20 @@
   },
   "scripts": {
     "build": "tsc",
+    "clean": "rm -rf dist",
     "start": "node dist/index.js",
     "debug": "node --inspect-brk dist/index.js",
     "lint": "eslint . --ext .ts,.js",
     "format": "prettier --write .",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "validate": "npm run typecheck && npm run test"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "docs"
   ],
   "dependencies": {
     "@google/gemini-cli-core": "file:../core",
