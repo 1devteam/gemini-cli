@@ -1,239 +1,239 @@
-import { PluginManager } from './plugin_manager.js';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { describe, expect, it } from 'vitest';
+import { PluginRegistry } from './plugin_registry.js';
+import {
+  IPlugin,
+  IPluginContext,
+  IPluginHealth,
+  IPluginResult,
+  PluginPermission,
+} from './plugin_interface.js';
 
-/**
- * Test script for the plugin system
- * This script tests the core plugin infrastructure
- */
-
-class MockGeminiCore {
-  async generateText(prompt: string, options?: any): Promise<string> {
-    // Mock implementation for testing
-    return `Generated response for: ${prompt}`;
-  }
-
-  async chat(messages: any[], options?: any): Promise<string> {
-    const lastMessage = messages[messages.length - 1];
-    return `Chat response to: ${lastMessage.content}`;
-  }
+function createContext(): IPluginContext {
+  return {
+    cwd: process.cwd(),
+    config: {},
+    permissions: [],
+    gemini: {
+      generateText: async () => 'ok',
+      generateCode: async () => 'ok',
+      chat: async () => 'ok',
+    },
+    fs: {
+      readFile: async () => '',
+      writeFile: async () => {},
+      exists: async () => true,
+      mkdir: async () => {},
+      readdir: async () => [],
+      stat: async () => ({}),
+    },
+    logger: {
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+      debug: () => {},
+    },
+    project: {
+      root: process.cwd(),
+      type: 'node',
+      git: {
+        branch: 'main',
+        remote: 'origin',
+        lastCommit: 'abc123',
+      },
+    },
+  };
 }
 
-async function setupTestEnvironment(): Promise<void> {
-  console.log('Setting up test environment...');
-  
-  // Create test plugin directory
-  const testPluginDir = path.join(process.cwd(), 'test-plugins');
-  await fs.mkdir(testPluginDir, { recursive: true });
+function createPlugin(overrides?: {
+  id?: string;
+  commandName?: string;
+  aliases?: string[];
+  enabledByDefault?: boolean;
+  permissions?: PluginPermission[];
+  cleanup?: () => Promise<void>;
+  healthCheck?: () => Promise<IPluginHealth>;
+}): IPlugin {
+  const id = overrides?.id ?? 'plugin-a';
+  const commandName = overrides?.commandName ?? `${id}:run`;
 
-  // Create a test plugin package
-  const testPluginPath = path.join(testPluginDir, 'test-plugin');
-  await fs.mkdir(testPluginPath, { recursive: true });
-
-  // Create package.json for the test plugin
-  const packageJson = {
-    name: 'test-plugin',
-    version: '1.0.0',
-    description: 'A test plugin',
-    main: 'index.js',
-    keywords: ['gemini-cli-plugin'],
-    geminiCliPlugin: true
-  };
-
-  await fs.writeFile(
-    path.join(testPluginPath, 'package.json'),
-    JSON.stringify(packageJson, null, 2)
-  );
-
-  // Create the test plugin implementation
-  const pluginCode = `
-import { IPlugin, IPluginMetadata, IPluginCommand, IPluginContext, IPluginResult } from '../plugin_interface.js';
-
-class TestPlugin {
-  metadata = {
-    id: 'test-plugin',
-    name: 'Test Plugin',
-    version: '1.0.0',
-    description: 'A test plugin for validation',
-    author: 'Test Author',
-    minCliVersion: '0.1.0'
-  };
-
-  async initialize(context) {
-    context.logger.info('Test plugin initialized');
-  }
-
-  getCommands() {
-    return [
-      {
-        name: 'test-command',
-        description: 'A test command',
-        handler: async (args, context) => {
-          return {
+  return {
+    metadata: {
+      id,
+      name: `${id} name`,
+      version: '1.0.0',
+      description: `${id} description`,
+      author: 'test',
+      minCliVersion: '0.1.0',
+      category: 'utility',
+      capabilities: ['commands'],
+      permissions: overrides?.permissions ?? [],
+      enabledByDefault: overrides?.enabledByDefault ?? true,
+    },
+    async initialize(): Promise<void> {
+      return;
+    },
+    getCommands() {
+      return [
+        {
+          name: commandName,
+          description: `command for ${id}`,
+          aliases: overrides?.aliases,
+          handler: async (): Promise<IPluginResult> => ({
             success: true,
-            message: 'Test command executed successfully',
-            data: { args, timestamp: new Date().toISOString() }
-          };
-        }
-      }
-    ];
-  }
-
-  async cleanup() {
-    console.log('Test plugin cleanup');
-  }
+            message: `${id} executed`,
+          }),
+        },
+      ];
+    },
+    cleanup: overrides?.cleanup,
+    healthCheck: overrides?.healthCheck,
+  };
 }
 
-export default () => new TestPlugin();
-`;
+describe('PluginRegistry invariants', () => {
+  it('registers plugin state and protects duplicate plugin ids', async () => {
+    const registry = new PluginRegistry();
+    const plugin = createPlugin({ id: 'dup-plugin' });
 
-  await fs.writeFile(path.join(testPluginPath, 'index.js'), pluginCode);
-  
-  console.log('Test environment setup complete');
-}
+    await registry.registerPlugin(plugin, 'loaded');
 
-async function testPluginLoading(): Promise<void> {
-  console.log('\n=== Testing Plugin Loading ===');
-  
-  const testPluginDir = path.join(process.cwd(), 'test-plugins');
-  const pluginManager = new PluginManager([testPluginDir]);
-  
-  // Initialize with mock Gemini core
-  const mockGeminiCore = new MockGeminiCore();
-  const config = { debug: true };
-  
-  await pluginManager.initialize(mockGeminiCore, config);
-  console.log('✓ Plugin manager initialized');
+    const state = registry.getPluginState('dup-plugin');
+    expect(state).toBeDefined();
+    expect(state?.status).toBe('loaded');
+    expect(state?.enabled).toBe(true);
 
-  // Load plugins
-  await pluginManager.loadPlugins();
-  console.log('✓ Plugins loaded');
+    await expect(registry.registerPlugin(createPlugin({ id: 'dup-plugin' }))).rejects.toThrow(
+      "Plugin 'dup-plugin' is already registered",
+    );
+  });
 
-  // Check loaded plugins
-  const plugins = pluginManager.getPlugins();
-  console.log(`✓ Found ${plugins.length} plugins:`);
-  
-  for (const plugin of plugins) {
-    console.log(`  - ${plugin.metadata.name} (${plugin.metadata.id})`);
-  }
+  it('rejects duplicate command names across plugins', async () => {
+    const registry = new PluginRegistry();
 
-  return;
-}
+    await registry.registerPlugin(
+      createPlugin({ id: 'plugin-a', commandName: 'shared:command' }),
+      'loaded',
+    );
 
-async function testCommandExecution(): Promise<void> {
-  console.log('\n=== Testing Command Execution ===');
-  
-  const testPluginDir = path.join(process.cwd(), 'test-plugins');
-  const pluginManager = new PluginManager([testPluginDir]);
-  
-  const mockGeminiCore = new MockGeminiCore();
-  const config = { debug: true };
-  
-  await pluginManager.initialize(mockGeminiCore, config);
-  await pluginManager.loadPlugins();
+    await expect(
+      registry.registerPlugin(createPlugin({ id: 'plugin-b', commandName: 'shared:command' }), 'loaded'),
+    ).rejects.toThrow("Command 'shared:command' conflicts with existing command from plugin 'plugin-a'");
+  });
 
-  // List available commands
-  const commands = pluginManager.listCommands();
-  console.log('✓ Available commands:');
-  for (const cmd of commands) {
-    console.log(`  - ${cmd.command}: ${cmd.description} (from ${cmd.plugin})`);
-  }
+  it('rejects duplicate aliases across plugins', async () => {
+    const registry = new PluginRegistry();
 
-  // Execute a test command
-  if (pluginManager.hasCommand('test-command')) {
-    console.log('\n✓ Executing test-command...');
-    const result = await pluginManager.executeCommand('test-command', { test: 'value' });
-    console.log('✓ Command result:', result);
-  } else {
-    console.log('✗ test-command not found');
-  }
-}
+    await registry.registerPlugin(
+      createPlugin({ id: 'plugin-a', commandName: 'plugin-a:run', aliases: ['shared-alias'] }),
+      'loaded',
+    );
 
-async function testExamplePlugin(): Promise<void> {
-  console.log('\n=== Testing Example Plugin ===');
-  
-  // We'll test the example plugin directly since it's in the same directory
-  const pluginManager = new PluginManager([process.cwd()]);
-  
-  const mockGeminiCore = new MockGeminiCore();
-  const config = { debug: true };
-  
-  await pluginManager.initialize(mockGeminiCore, config);
+    await expect(
+      registry.registerPlugin(
+        createPlugin({ id: 'plugin-b', commandName: 'plugin-b:run', aliases: ['shared-alias'] }),
+        'loaded',
+      ),
+    ).rejects.toThrow("Command 'shared-alias' conflicts with existing command from plugin 'plugin-a'");
+  });
 
-  // Load the example plugin directly
-  try {
-    await pluginManager.loadPlugin('./example_plugin.ts');
-    console.log('✓ Example plugin loaded');
-  } catch (error) {
-    console.log('Note: Example plugin loading failed (expected if not compiled):', error.message);
-    return;
-  }
+  it('blocks command execution when plugin is not active', async () => {
+    const registry = new PluginRegistry();
+    const context = createContext();
 
-  // Test hello command
-  if (pluginManager.hasCommand('hello')) {
-    console.log('\n✓ Testing hello command...');
-    const result = await pluginManager.executeCommand('hello', { name: 'Plugin System' });
-    console.log('✓ Hello result:', result);
-  }
+    await registry.registerPlugin(createPlugin({ id: 'inactive-plugin' }), 'loaded');
 
-  // Test file-info command
-  if (pluginManager.hasCommand('file-info')) {
-    console.log('\n✓ Testing file-info command...');
-    const result = await pluginManager.executeCommand('file-info', { path: './plugin_interface.ts' });
-    console.log('✓ File-info result:', result.success ? 'Success' : result.error);
-  }
-}
+    await expect(
+      registry.executeCommand('inactive-plugin:run', {}, context),
+    ).rejects.toThrow("Plugin 'inactive-plugin' is not active");
+  });
 
-async function testPluginRegistry(): Promise<void> {
-  console.log('\n=== Testing Plugin Registry ===');
-  
-  const pluginManager = new PluginManager();
-  const registry = pluginManager.getRegistry();
-  
-  console.log('✓ Plugin registry created');
-  console.log(`✓ Initial plugin count: ${registry.getPlugins().length}`);
-  console.log(`✓ Initial command count: ${registry.getCommands().size}`);
-  
-  // Test command listing
-  const commands = registry.listCommands();
-  console.log(`✓ Listed ${commands.length} commands`);
-}
+  it('allows command execution only when plugin is active and enabled', async () => {
+    const registry = new PluginRegistry();
+    const context = createContext();
 
-async function cleanupTestEnvironment(): Promise<void> {
-  console.log('\n=== Cleaning up test environment ===');
-  
-  try {
-    const testPluginDir = path.join(process.cwd(), 'test-plugins');
-    await fs.rm(testPluginDir, { recursive: true, force: true });
-    console.log('✓ Test environment cleaned up');
-  } catch (error) {
-    console.log('Note: Cleanup failed (may not exist):', error.message);
-  }
-}
+    await registry.registerPlugin(createPlugin({ id: 'active-plugin' }), 'initialized');
+    registry.enablePlugin('active-plugin');
+    registry.updatePluginStatus('active-plugin', 'active');
 
-async function runTests(): Promise<void> {
-  console.log('🚀 Starting Plugin System Tests\n');
-  
-  try {
-    await setupTestEnvironment();
-    await testPluginRegistry();
-    await testPluginLoading();
-    await testCommandExecution();
-    await testExamplePlugin();
-    
-    console.log('\n✅ All tests completed successfully!');
-  } catch (error) {
-    console.error('\n❌ Test failed:', error);
-    throw error;
-  } finally {
-    await cleanupTestEnvironment();
-  }
-}
+    const result = await registry.executeCommand('active-plugin:run', {}, context);
+    expect(result).toEqual({ success: true, message: 'active-plugin executed' });
+  });
 
-// Run tests if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  runTests().catch(console.error);
-}
+  it('disables plugin execution after disablePlugin is called', async () => {
+    const registry = new PluginRegistry();
+    const context = createContext();
 
-export { runTests };
+    await registry.registerPlugin(createPlugin({ id: 'toggle-plugin' }), 'initialized');
+    registry.enablePlugin('toggle-plugin');
+    registry.updatePluginStatus('toggle-plugin', 'active');
 
+    await registry.executeCommand('toggle-plugin:run', {}, context);
+
+    registry.disablePlugin('toggle-plugin');
+
+    await expect(
+      registry.executeCommand('toggle-plugin:run', {}, context),
+    ).rejects.toThrow("Plugin 'toggle-plugin' is not active");
+  });
+
+  it('tracks health and failure metadata on plugin state', async () => {
+    const registry = new PluginRegistry();
+    await registry.registerPlugin(createPlugin({ id: 'health-plugin' }), 'initialized');
+
+    registry.setPluginHealth('health-plugin', {
+      status: 'healthy',
+      message: 'ready',
+      details: { checks: 2 },
+    });
+    registry.updatePluginStatus('health-plugin', 'failed', 'boom');
+
+    const state = registry.getPluginState('health-plugin');
+    expect(state?.health).toEqual({
+      status: 'healthy',
+      message: 'ready',
+      details: { checks: 2 },
+    });
+    expect(state?.status).toBe('failed');
+    expect(state?.lastError).toBe('boom');
+  });
+
+  it('calls cleanup and transitions to unloaded on unregister', async () => {
+    const registry = new PluginRegistry();
+    let cleaned = false;
+
+    await registry.registerPlugin(
+      createPlugin({
+        id: 'cleanup-plugin',
+        cleanup: async () => {
+          cleaned = true;
+        },
+      }),
+      'active',
+    );
+
+    await registry.unregisterPlugin('cleanup-plugin');
+
+    expect(cleaned).toBe(true);
+    const state = registry.getPluginState('cleanup-plugin');
+    expect(state?.status).toBe('unloaded');
+    expect(state?.enabled).toBe(false);
+    expect(registry.getPlugin('cleanup-plugin')).toBeUndefined();
+    expect(registry.hasCommand('cleanup-plugin:run')).toBe(false);
+  });
+
+  it('lists unique commands without duplicating alias-backed command entries', async () => {
+    const registry = new PluginRegistry();
+    await registry.registerPlugin(
+      createPlugin({ id: 'alias-plugin', aliases: ['alias-one', 'alias-two'] }),
+      'active',
+    );
+
+    const commands = registry.listCommands();
+    expect(commands).toHaveLength(1);
+    expect(commands[0]).toMatchObject({
+      command: 'alias-plugin:run',
+      plugin: 'alias-plugin name',
+      description: 'command for alias-plugin',
+    });
+  });
+});
