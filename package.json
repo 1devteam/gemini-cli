@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist integration-test-report.md",
     "start": "node dist/index.js",
     "debug": "node --inspect-brk dist/index.js",
     "lint": "eslint . --ext .ts,.js",
