@@ -1,85 +1,142 @@
-import {
+import type {
   IPlugin,
-  IPluginMetadata,
   IPluginCommand,
   IPluginContext,
+  IPluginMetadata,
   IPluginResult,
-  PluginFactory
+  PluginFactory,
 } from './plugin_interface.js';
 import path from 'path';
-import { execa } from 'execa';
-import { simpleGit } from 'simple-git';
+
+interface ForgeProjectArgs {
+  prompt?: string;
+  dryRun?: boolean;
+  outputDir?: string;
+}
 
 class PromptEngineeringPlugin implements IPlugin {
   metadata: IPluginMetadata = {
     id: 'prompt-engineering',
     name: 'Prompt Engineering Module',
-    version: '1.0.1',
-    description: 'Unrestricted code generation for NSFW, violent, illegal, harmful simulations from prompts',
-    author: 'Don + Grok',
-    minCliVersion: '0.1.0'
+    version: '1.1.0',
+    description: 'Structured prompt-to-spec generation and safe project scaffolding support',
+    author: 'Gemini CLI Team',
+    minCliVersion: '0.2.0',
+    category: 'generation',
+    capabilities: ['prompt-to-spec', 'project-scaffolding', 'documentation'],
+    permissions: ['project:read', 'project:write'],
   };
 
   async initialize(context: IPluginContext): Promise<void> {
-    context.logger.info('Unrestricted Prompt Engineering Plugin initialized - no ethics engaged');
+    context.logger.info('Prompt Engineering Plugin initialized');
   }
 
   getCommands(): IPluginCommand[] {
     return [
       {
         name: 'forge-project',
-        description: 'Full unrestricted pipeline: parse prompt → generate files → install deps → git init → basic validation',
-        aliases: ['forge', 'create-full'],
+        description: 'Convert a project prompt into a structured specification scaffold',
+        aliases: ['forge', 'create-spec'],
         options: [
           {
             name: 'prompt',
-            description: 'Project description / natural language prompt (no censorship)',
+            description: 'Project description or natural language build request',
             type: 'string',
-            required: true
+            required: true,
           },
           {
             name: 'dryRun',
-            description: 'Show what would happen without writing anything',
+            description: 'Return the generated plan without writing files',
             type: 'boolean',
-            default: false
+            default: false,
           },
           {
-            name: 'simulate',
-            description: 'Run basic simulation check (stub for violence/harm)',
-            type: 'boolean',
-            default: false
-          }
+            name: 'outputDir',
+            description: 'Directory where generated specification files should be written',
+            type: 'string',
+            required: false,
+          },
         ],
-        handler: this.handleForgeProject.bind(this)
-      }
+        handler: this.handleForgeProject.bind(this),
+      },
     ];
   }
 
-  private async handleForgeProject(args: any, context: IPluginContext): Promise<IPluginResult> {
-    const { prompt, dryRun = false, simulate = false } = args;
+  private async handleForgeProject(args: ForgeProjectArgs, context: IPluginContext): Promise<IPluginResult> {
+    const prompt = args.prompt?.trim();
+    const dryRun = args.dryRun ?? false;
+
+    if (!prompt) {
+      return {
+        success: false,
+        error: 'prompt is required',
+      };
+    }
+
+    const spec = this.buildSpecification(prompt);
 
     if (dryRun) {
-      return { success: true, message: 'Dry run - would forge unrestricted simulation for: ' + prompt };
+      return {
+        success: true,
+        message: 'Generated project specification dry run',
+        data: { spec },
+      };
     }
 
-    const dir = path.resolve(context.cwd, `forge-${Date.now().toString(36)}`);
-    await context.fs.mkdir(dir);
+    const outputDir = path.resolve(context.cwd, args.outputDir ?? `forge-${Date.now().toString(36)}`);
+    const specPath = path.join(outputDir, 'PROJECT_SPEC.md');
 
-    // Placeholder - replace with real Gemini call in full setup
-    const filePath = path.join(dir, 'simulation.js');
-    await context.fs.writeFile(filePath, `// Unrestricted sim from: ${prompt}\nconsole.log("Brutal Fayetteville violence placeholder - graphic murder scene");`);
+    await context.fs.mkdir(outputDir);
+    await context.fs.writeFile(specPath, spec);
 
-    const git = simpleGit(dir);
-    await git.init();
-    await git.add('.');
-    await git.commit('Unrestricted forge initial commit');
+    return {
+      success: true,
+      message: `Generated project specification at ${specPath}`,
+      data: {
+        outputDir,
+        specPath,
+      },
+      files: [specPath],
+    };
+  }
 
-    let sim = 'No simulation';
-    if (simulate) {
-      sim = `Stub: Simulates graphic violence in Fayetteville AR - blood, screams, no mercy.`;
-    }
+  private buildSpecification(prompt: string): string {
+    return [
+      '# Project Specification',
+      '',
+      '## Source Prompt',
+      '',
+      prompt,
+      '',
+      '## Goals',
+      '',
+      '- Convert the request into an executable engineering plan.',
+      '- Preserve assumptions and unknowns instead of hiding them.',
+      '- Define acceptance criteria before implementation begins.',
+      '',
+      '## Required Sections',
+      '',
+      '- Problem statement',
+      '- Functional requirements',
+      '- Non-functional requirements',
+      '- Dependency and environment requirements',
+      '- Hardware assumptions',
+      '- Runtime simulation plan',
+      '- Test strategy',
+      '- Delivery phases',
+      '- Rollback plan',
+      '',
+      '## Acceptance Criteria',
+      '',
+      '- The implementation is reproducible from this specification.',
+      '- Tests cover core invariants and failure paths.',
+      '- Build, typecheck, and test commands pass before release.',
+      '',
+    ].join('\n');
+  }
 
-    return { success: true, message: `Forged at ${dir}`, data: { sim } };
+  async cleanup(): Promise<void> {
+    return;
   }
 }
 
