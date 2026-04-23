@@ -1,0 +1,53 @@
+import { describe, expect, it } from 'vitest';
+import createProjectSimulatorPlugin from '../project_simulator_plugin.js';
+
+describe('ProjectSimulatorPlugin contract', () => {
+  it('exposes analyze and simulate commands', () => {
+    const plugin = createProjectSimulatorPlugin();
+    const commandNames = plugin.getCommands().map((command) => command.name);
+
+    expect(commandNames).toContain('analyze-project');
+    expect(commandNames).toContain('simulate-scenario');
+  });
+
+  it('returns deterministic simulation result shape', async () => {
+    const plugin = createProjectSimulatorPlugin();
+    const simulate = plugin.getCommands().find((command) => command.name === 'simulate-scenario');
+
+    if (!simulate) {
+      throw new Error('simulate-scenario command not found');
+    }
+
+    const result = await simulate.handler({ scenario: 'load-test' }, {} as never);
+
+    expect(result).toMatchObject({
+      success: true,
+      message: 'Simulated load-test',
+      data: {
+        scenario: 'load-test',
+        result: 'ok',
+      },
+    });
+    expect(typeof (result.data as { timestamp: unknown }).timestamp).toBe('string');
+  });
+
+  it('defaults missing scenario to default', async () => {
+    const plugin = createProjectSimulatorPlugin();
+    const simulate = plugin.getCommands().find((command) => command.name === 'simulate-scenario');
+
+    if (!simulate) {
+      throw new Error('simulate-scenario command not found');
+    }
+
+    const result = await simulate.handler({}, {} as never);
+
+    expect(result).toMatchObject({
+      success: true,
+      message: 'Simulated default',
+      data: {
+        scenario: 'default',
+        result: 'ok',
+      },
+    });
+  });
+});
