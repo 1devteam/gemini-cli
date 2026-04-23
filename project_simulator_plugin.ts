@@ -7,6 +7,7 @@ import type {
   PluginFactory,
 } from './plugin_interface.js';
 import path from 'path';
+import { analyzePackageJson } from './dependency_inspector.js';
 
 interface FileStatsLike {
   isFile(): boolean;
@@ -24,6 +25,8 @@ interface SimulateScenarioArgs extends Record<string, unknown> {
 interface ProjectAnalysisData {
   projectPath: string;
   totalFiles: number;
+  dependencyCount: number;
+  isNodeProject: boolean;
 }
 
 interface SimulationData {
@@ -36,8 +39,8 @@ class ProjectSimulatorPlugin implements IPlugin {
   metadata: IPluginMetadata = {
     id: 'project-simulator',
     name: 'Project Simulator',
-    version: '1.1.0',
-    description: 'Deterministic project analysis and runtime simulation',
+    version: '1.2.0',
+    description: 'Deterministic project analysis with dependency awareness and runtime simulation',
     author: 'Gemini CLI Team',
     minCliVersion: '0.2.0',
     category: 'simulation',
@@ -53,7 +56,7 @@ class ProjectSimulatorPlugin implements IPlugin {
     return [
       {
         name: 'analyze-project',
-        description: 'Analyze project structure and metrics',
+        description: 'Analyze project structure, metrics, and dependencies',
         options: [
           {
             name: 'path',
@@ -85,9 +88,13 @@ class ProjectSimulatorPlugin implements IPlugin {
     const requestedPath = typeof args.path === 'string' && args.path.trim() ? args.path : '.';
     const projectPath = path.resolve(context.cwd, requestedPath);
     const files = await this.getAllFiles(projectPath, context);
+    const dependencySummary = await this.readDependencySummary(projectPath, context);
+
     const data: ProjectAnalysisData = {
       projectPath,
       totalFiles: files.length,
+      dependencyCount: dependencySummary.dependencyCount,
+      isNodeProject: dependencySummary.isNodeProject,
     };
 
     return {
@@ -110,6 +117,24 @@ class ProjectSimulatorPlugin implements IPlugin {
       message: `Simulated ${scenario}`,
       data,
     };
+  }
+
+  private async readDependencySummary(
+    projectPath: string,
+    context: IPluginContext,
+  ): Promise<{ dependencyCount: number; isNodeProject: boolean }> {
+    const packageJsonPath = path.join(projectPath, 'package.json');
+
+    if (!(await context.fs.exists(packageJsonPath))) {
+      return { dependencyCount: 0, isNodeProject: false };
+    }
+
+    try {
+      const packageJson = JSON.parse(await context.fs.readFile(packageJsonPath)) as Record<string, unknown>;
+      return analyzePackageJson(packageJson);
+    } catch {
+      return { dependencyCount: 0, isNodeProject: false };
+    }
   }
 
   private async getAllFiles(dir: string, context: IPluginContext): Promise<string[]> {
