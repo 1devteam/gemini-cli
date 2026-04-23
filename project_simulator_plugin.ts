@@ -13,6 +13,25 @@ interface FileStatsLike {
   isDirectory(): boolean;
 }
 
+interface AnalyzeProjectArgs extends Record<string, unknown> {
+  path?: string;
+}
+
+interface SimulateScenarioArgs extends Record<string, unknown> {
+  scenario?: string;
+}
+
+interface ProjectAnalysisData {
+  projectPath: string;
+  totalFiles: number;
+}
+
+interface SimulationData {
+  scenario: string;
+  result: 'ok';
+  timestamp: string;
+}
+
 class ProjectSimulatorPlugin implements IPlugin {
   metadata: IPluginMetadata = {
     id: 'project-simulator',
@@ -35,34 +54,61 @@ class ProjectSimulatorPlugin implements IPlugin {
       {
         name: 'analyze-project',
         description: 'Analyze project structure and metrics',
-        options: [{ name: 'path', description: 'Path to the project directory', type: 'string', required: false, default: '.' }],
+        options: [
+          {
+            name: 'path',
+            description: 'Path to the project directory',
+            type: 'string',
+            required: false,
+            default: '.',
+          },
+        ],
         handler: this.handleAnalyze.bind(this),
       },
       {
         name: 'simulate-scenario',
         description: 'Run deterministic simulation',
-        options: [{ name: 'scenario', description: 'Scenario name to simulate', type: 'string', required: true }],
+        options: [
+          {
+            name: 'scenario',
+            description: 'Scenario name to simulate',
+            type: 'string',
+            required: true,
+          },
+        ],
         handler: this.handleSimulate.bind(this),
       },
     ];
   }
 
-  private async handleAnalyze(args: any, context: IPluginContext): Promise<IPluginResult> {
-    const projectPath = path.resolve(context.cwd, args.path || '.');
+  private async handleAnalyze(args: AnalyzeProjectArgs, context: IPluginContext): Promise<IPluginResult> {
+    const requestedPath = typeof args.path === 'string' && args.path.trim() ? args.path : '.';
+    const projectPath = path.resolve(context.cwd, requestedPath);
     const files = await this.getAllFiles(projectPath, context);
+    const data: ProjectAnalysisData = {
+      projectPath,
+      totalFiles: files.length,
+    };
 
     return {
       success: true,
       message: 'Analysis complete',
-      data: { totalFiles: files.length },
+      data,
     };
   }
 
-  private async handleSimulate(args: any): Promise<IPluginResult> {
+  private async handleSimulate(args: SimulateScenarioArgs): Promise<IPluginResult> {
+    const scenario = typeof args.scenario === 'string' && args.scenario.trim() ? args.scenario : 'default';
+    const data: SimulationData = {
+      scenario,
+      result: 'ok',
+      timestamp: new Date().toISOString(),
+    };
+
     return {
       success: true,
-      message: `Simulated ${args.scenario}`,
-      data: { scenario: args.scenario, result: 'ok' },
+      message: `Simulated ${scenario}`,
+      data,
     };
   }
 
@@ -84,7 +130,9 @@ class ProjectSimulatorPlugin implements IPlugin {
     return results;
   }
 
-  async cleanup(): Promise<void> {}
+  async cleanup(): Promise<void> {
+    return;
+  }
 }
 
 const createProjectSimulatorPlugin: PluginFactory = () => new ProjectSimulatorPlugin();
