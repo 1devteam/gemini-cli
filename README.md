@@ -125,6 +125,25 @@ Tests are expected to emphasize:
 - simulation evidence
 - regression resistance
 
+### Runtime verification commands
+
+These are the required local verification commands for runtime hardening work:
+
+```bash
+npm run typecheck
+npm run test
+npm run build
+```
+
+These commands are not optional once runtime changes begin.
+
+They exist to verify:
+
+- TypeScript contract coherence
+- plugin runtime invariant coverage
+- integration behavior across loader / registry / manager
+- build output viability
+
 ## Immediate Focus
 
 The current execution path is:
