@@ -1,23 +1,36 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { IPlugin, IPluginMetadata, PluginFactory } from './plugin_interface.js';
+import {
+  IPlugin,
+  IPluginMetadata,
+  PluginFactory,
+  PluginLifecycleStatus,
+} from './plugin_interface.js';
+
+export interface IPluginLoaderState {
+  plugin: IPlugin;
+  path: string;
+  status: PluginLifecycleStatus;
+  lastError?: string;
+}
 
 export interface IPluginLoader {
-  /** Load plugins from a directory */
   loadPluginsFromDirectory(directory: string): Promise<IPlugin[]>;
-  
-  /** Load a single plugin from a file */
   loadPlugin(pluginPath: string): Promise<IPlugin>;
-  
-  /** Validate plugin metadata */
   validatePlugin(plugin: IPlugin): boolean;
-  
-  /** Get plugin directories */
   getPluginDirectories(): string[];
+  getLoadedPlugins(): IPlugin[];
+  getPlugin(id: string): IPlugin | undefined;
+  getPluginPath(id: string): string | undefined;
+  getPluginState(id: string): IPluginLoaderState | undefined;
+  loadAllPlugins(): Promise<IPlugin[]>;
+  unloadPlugin(id: string): Promise<boolean>;
 }
 
 export class PluginLoader implements IPluginLoader {
   private loadedPlugins: Map<string, IPlugin> = new Map();
+  private loadedPluginPaths: Map<string, string> = new Map();
+  private pluginStates: Map<string, IPluginLoaderState> = new Map();
   private pluginDirectories: string[] = [];
 
   constructor(pluginDirectories?: string[]) {
@@ -37,109 +50,170 @@ export class PluginLoader implements IPluginLoader {
     return [...this.pluginDirectories];
   }
 
+  getLoadedPlugins(): IPlugin[] {
+    return Array.from(this.loadedPlugins.values());
+  }
+
+  getPlugin(id: string): IPlugin | undefined {
+    return this.loadedPlugins.get(id);
+  }
+
+  getPluginPath(id: string): string | undefined {
+    return this.loadedPluginPaths.get(id);
+  }
+
+  getPluginState(id: string): IPluginLoaderState | undefined {
+    return this.pluginStates.get(id);
+  }
+
   async loadPluginsFromDirectory(directory: string): Promise<IPlugin[]> {
     const plugins: IPlugin[] = [];
-    
+
     try {
       const entries = await fs.readdir(directory, { withFileTypes: true });
-      
+
       for (const entry of entries) {
-        if (entry.isDirectory()) {
-          const pluginPath = path.join(directory, entry.name);
-          try {
-            const plugin = await this.loadPlugin(pluginPath);
-            plugins.push(plugin);
-          } catch (error) {
-            console.warn(`Failed to load plugin from ${pluginPath}:`, error);
-          }
+        if (!entry.isDirectory()) {
+          continue;
+        }
+
+        const pluginPath = path.join(directory, entry.name);
+        try {
+          const plugin = await this.loadPlugin(pluginPath);
+          plugins.push(plugin);
+        } catch (error) {
+          console.warn(`Failed to load plugin from ${pluginPath}:`, error);
         }
       }
     } catch (error) {
       console.warn(`Failed to read plugin directory ${directory}:`, error);
     }
-    
+
     return plugins;
   }
 
   async loadPlugin(pluginPath: string): Promise<IPlugin> {
-    // Check if it's a directory with package.json
-    const packageJsonPath = path.join(pluginPath, 'package.json');
+    const resolvedPluginPath = path.resolve(pluginPath);
     let pluginEntryPoint: string;
-    
+
     try {
-      const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
-      
-      // Validate that this is a Gemini CLI plugin
-      if (!this.isGeminiCliPlugin(packageJson)) {
-        throw new Error('Not a valid Gemini CLI plugin');
-      }
-      
-      // Determine entry point
-      pluginEntryPoint = path.join(pluginPath, packageJson.main || 'index.js');
+      pluginEntryPoint = await this.resolvePluginEntryPoint(resolvedPluginPath);
     } catch (error) {
-      // If no package.json, assume it's a direct plugin file
-      pluginEntryPoint = pluginPath.endsWith('.js') ? pluginPath : path.join(pluginPath, 'index.js');
+      throw new Error(`Unable to resolve plugin entry point for '${resolvedPluginPath}': ${String(error)}`);
     }
 
-    // Check if entry point exists
-    try {
-      await fs.access(pluginEntryPoint);
-    } catch (error) {
-      throw new Error(`Plugin entry point not found: ${pluginEntryPoint}`);
-    }
-
-    // Load the plugin module
     const pluginModule = await import(pluginEntryPoint);
-    
-    // Get the plugin factory function
     const pluginFactory: PluginFactory = pluginModule.default;
     if (typeof pluginFactory !== 'function') {
       throw new Error('Plugin must export a default factory function');
     }
 
-    // Create plugin instance
     const plugin = pluginFactory();
-    
-    // Validate plugin
+    const pluginId = plugin.metadata?.id;
+
+    if (!pluginId) {
+      throw new Error('Plugin metadata.id is required');
+    }
+
+    this.pluginStates.set(pluginId, {
+      plugin,
+      path: resolvedPluginPath,
+      status: 'loaded',
+    });
+
     if (!this.validatePlugin(plugin)) {
+      this.pluginStates.set(pluginId, {
+        plugin,
+        path: resolvedPluginPath,
+        status: 'failed',
+        lastError: 'Plugin validation failed',
+      });
       throw new Error('Plugin validation failed');
     }
 
-    // Check for duplicate plugin IDs
-    if (this.loadedPlugins.has(plugin.metadata.id)) {
-      throw new Error(`Plugin with ID '${plugin.metadata.id}' is already loaded`);
+    if (this.loadedPlugins.has(pluginId)) {
+      this.pluginStates.set(pluginId, {
+        plugin,
+        path: resolvedPluginPath,
+        status: 'failed',
+        lastError: `Plugin with ID '${pluginId}' is already loaded`,
+      });
+      throw new Error(`Plugin with ID '${pluginId}' is already loaded`);
     }
 
-    // Store the loaded plugin
-    this.loadedPlugins.set(plugin.metadata.id, plugin);
-    
+    this.loadedPlugins.set(pluginId, plugin);
+    this.loadedPluginPaths.set(pluginId, resolvedPluginPath);
+    this.pluginStates.set(pluginId, {
+      plugin,
+      path: resolvedPluginPath,
+      status: 'validated',
+    });
+
     return plugin;
   }
 
-  private isGeminiCliPlugin(packageJson: any): boolean {
+  private async resolvePluginEntryPoint(pluginPath: string): Promise<string> {
+    const packageJsonPath = path.join(pluginPath, 'package.json');
+
+    try {
+      const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+      if (!this.isGeminiCliPlugin(packageJson)) {
+        throw new Error('Not a valid Gemini CLI plugin');
+      }
+      const entryPoint = path.join(pluginPath, packageJson.main || 'index.js');
+      await fs.access(entryPoint);
+      return entryPoint;
+    } catch {
+      const entryPoint = pluginPath.endsWith('.js') ? pluginPath : path.join(pluginPath, 'index.js');
+      await fs.access(entryPoint);
+      return entryPoint;
+    }
+  }
+
+  private isGeminiCliPlugin(packageJson: Record<string, unknown>): boolean {
+    const keywords = Array.isArray(packageJson.keywords) ? packageJson.keywords : [];
     return (
-      packageJson.keywords?.includes('gemini-cli-plugin') ||
-      packageJson.name?.startsWith('@gemini-cli-plugins/') ||
+      keywords.includes('gemini-cli-plugin') ||
+      (typeof packageJson.name === 'string' && packageJson.name.startsWith('@gemini-cli-plugins/')) ||
       packageJson.geminiCliPlugin === true
     );
   }
 
   validatePlugin(plugin: IPlugin): boolean {
-    // Validate metadata
     if (!plugin.metadata) {
       console.error('Plugin missing metadata');
       return false;
     }
 
-    const required = ['id', 'name', 'version', 'description', 'author'];
+    const required: (keyof IPluginMetadata)[] = [
+      'id',
+      'name',
+      'version',
+      'description',
+      'author',
+      'minCliVersion',
+      'category',
+      'capabilities',
+      'permissions',
+    ];
+
     for (const field of required) {
-      if (!plugin.metadata[field as keyof IPluginMetadata]) {
+      if (plugin.metadata[field] === undefined || plugin.metadata[field] === null) {
         console.error(`Plugin missing required metadata field: ${field}`);
         return false;
       }
     }
 
-    // Validate methods
+    if (!Array.isArray(plugin.metadata.capabilities) || plugin.metadata.capabilities.length === 0) {
+      console.error('Plugin must declare at least one capability');
+      return false;
+    }
+
+    if (!Array.isArray(plugin.metadata.permissions)) {
+      console.error('Plugin permissions must be an array');
+      return false;
+    }
+
     if (typeof plugin.initialize !== 'function') {
       console.error('Plugin missing initialize method');
       return false;
@@ -150,7 +224,6 @@ export class PluginLoader implements IPluginLoader {
       return false;
     }
 
-    // Validate commands
     try {
       const commands = plugin.getCommands();
       if (!Array.isArray(commands)) {
@@ -174,7 +247,7 @@ export class PluginLoader implements IPluginLoader {
 
   async loadAllPlugins(): Promise<IPlugin[]> {
     const allPlugins: IPlugin[] = [];
-    
+
     for (const directory of this.pluginDirectories) {
       try {
         const plugins = await this.loadPluginsFromDirectory(directory);
@@ -183,16 +256,8 @@ export class PluginLoader implements IPluginLoader {
         console.warn(`Failed to load plugins from ${directory}:`, error);
       }
     }
-    
+
     return allPlugins;
-  }
-
-  getLoadedPlugins(): IPlugin[] {
-    return Array.from(this.loadedPlugins.values());
-  }
-
-  getPlugin(id: string): IPlugin | undefined {
-    return this.loadedPlugins.get(id);
   }
 
   async unloadPlugin(id: string): Promise<boolean> {
@@ -205,12 +270,30 @@ export class PluginLoader implements IPluginLoader {
       if (plugin.cleanup) {
         await plugin.cleanup();
       }
+
       this.loadedPlugins.delete(id);
+      this.loadedPluginPaths.delete(id);
+
+      const state = this.pluginStates.get(id);
+      if (state) {
+        this.pluginStates.set(id, {
+          ...state,
+          status: 'unloaded',
+        });
+      }
+
       return true;
     } catch (error) {
+      const state = this.pluginStates.get(id);
+      if (state) {
+        this.pluginStates.set(id, {
+          ...state,
+          status: 'failed',
+          lastError: String(error),
+        });
+      }
       console.error(`Error unloading plugin ${id}:`, error);
       return false;
     }
   }
 }
-
