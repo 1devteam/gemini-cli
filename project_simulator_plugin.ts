@@ -8,6 +8,7 @@ import type {
 } from './plugin_interface.js';
 import path from 'path';
 import { analyzePackageJson } from './dependency_inspector.js';
+import { inspectEnvironment } from './environment_inspector.js';
 
 interface FileStatsLike {
   isFile(): boolean;
@@ -27,6 +28,7 @@ interface ProjectAnalysisData {
   totalFiles: number;
   dependencyCount: number;
   isNodeProject: boolean;
+  environment: ReturnType<typeof inspectEnvironment>;
 }
 
 interface SimulationData {
@@ -39,8 +41,8 @@ class ProjectSimulatorPlugin implements IPlugin {
   metadata: IPluginMetadata = {
     id: 'project-simulator',
     name: 'Project Simulator',
-    version: '1.2.0',
-    description: 'Deterministic project analysis with dependency awareness and runtime simulation',
+    version: '1.3.0',
+    description: 'Deterministic project analysis with dependency and environment awareness',
     author: 'Gemini CLI Team',
     minCliVersion: '0.2.0',
     category: 'simulation',
@@ -56,7 +58,7 @@ class ProjectSimulatorPlugin implements IPlugin {
     return [
       {
         name: 'analyze-project',
-        description: 'Analyze project structure, metrics, and dependencies',
+        description: 'Analyze project structure, dependencies, and environment',
         options: [
           {
             name: 'path',
@@ -89,12 +91,14 @@ class ProjectSimulatorPlugin implements IPlugin {
     const projectPath = path.resolve(context.cwd, requestedPath);
     const files = await this.getAllFiles(projectPath, context);
     const dependencySummary = await this.readDependencySummary(projectPath, context);
+    const environment = inspectEnvironment();
 
     const data: ProjectAnalysisData = {
       projectPath,
       totalFiles: files.length,
       dependencyCount: dependencySummary.dependencyCount,
       isNodeProject: dependencySummary.isNodeProject,
+      environment,
     };
 
     return {
