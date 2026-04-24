@@ -44,7 +44,7 @@ class ProjectSimulatorPlugin implements IPlugin {
   metadata: IPluginMetadata = {
     id: 'project-simulator',
     name: 'Project Simulator',
-    version: '1.5.0',
+    version: '1.6.0',
     description: 'Deterministic project analysis with dependency, environment, and constraint-aware simulation',
     author: 'Gemini CLI Team',
     minCliVersion: '0.2.0',
@@ -111,14 +111,15 @@ class ProjectSimulatorPlugin implements IPlugin {
     };
   }
 
-  private async handleSimulate(args: SimulateScenarioArgs): Promise<IPluginResult> {
+  private async handleSimulate(args: SimulateScenarioArgs, context: IPluginContext): Promise<IPluginResult> {
     const scenario = typeof args.scenario === 'string' && args.scenario.trim() ? args.scenario : 'default';
     const environment = inspectEnvironment();
+    const dependencySummary = await this.readDependencySummary(context.cwd, context);
     const policy = evaluateSimulationPolicy({
       scenario,
       cpuCount: environment.cpuCount,
       memoryMB: environment.memoryMB,
-      dependencyCount: 0,
+      dependencyCount: dependencySummary.dependencyCount,
     });
 
     const data: SimulationData = {
