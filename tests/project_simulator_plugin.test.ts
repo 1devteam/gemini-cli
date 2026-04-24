@@ -42,6 +42,7 @@ describe('ProjectSimulatorPlugin contract', () => {
     expect(['proceed', 'proceed-with-caution', 'block-until-reviewed']).toContain((result.data as { decision: string }).decision);
     expect(Array.isArray((result.data as { signals: unknown[] }).signals)).toBe(true);
     expect(Array.isArray((result.data as { recommendations: unknown[] }).recommendations)).toBe(true);
+    expect(Array.isArray((result.data as { nextActions: unknown[] }).nextActions)).toBe(true);
   });
 
   it('defaults missing scenario to default', async () => {
@@ -67,5 +68,6 @@ describe('ProjectSimulatorPlugin contract', () => {
     expect(['low', 'medium', 'high']).toContain((result.data as { riskLevel: string }).riskLevel);
     expect(Array.isArray((result.data as { signals: unknown[] }).signals)).toBe(true);
     expect(Array.isArray((result.data as { recommendations: unknown[] }).recommendations)).toBe(true);
+    expect((result.data as { nextActions: string[] }).nextActions).toContain('Proceed with baseline simulation run.');
   });
 });
