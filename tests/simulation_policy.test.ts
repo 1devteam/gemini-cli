@@ -15,6 +15,7 @@ describe('Simulation policy', () => {
     expect(result.decision).toBe('proceed');
     expect(result.signals.length).toBe(0);
     expect(result.recommendations).toContain('No immediate constraint recommendations detected.');
+    expect(result.nextActions).toEqual(['Proceed with baseline simulation run.']);
   });
 
   it('detects high risk under constraints', () => {
@@ -30,6 +31,7 @@ describe('Simulation policy', () => {
     expect(result.decision).toBe('block-until-reviewed');
     expect(result.signals.length).toBeGreaterThanOrEqual(2);
     expect(result.recommendations.length).toBeGreaterThanOrEqual(2);
+    expect(result.nextActions).toContain('Review blocking signals before execution.');
   });
 
   it('adds dependency surface recommendation', () => {
@@ -43,6 +45,7 @@ describe('Simulation policy', () => {
     expect(result.decision).toBe('proceed-with-caution');
     expect(result.signals).toContain('high-dependency-surface');
     expect(result.recommendations).toContain('Review dependency surface before scaling or deployment simulations.');
+    expect(result.nextActions).toContain('Proceed with monitoring enabled.');
   });
 
   it('classifies scaling scenario and emits cpu pressure signal', () => {
