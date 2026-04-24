@@ -42,13 +42,14 @@ interface SimulationData {
   riskLevel: 'low' | 'medium' | 'high';
   signals: string[];
   recommendations: string[];
+  nextActions: string[];
 }
 
 class ProjectSimulatorPlugin implements IPlugin {
   metadata: IPluginMetadata = {
     id: 'project-simulator',
     name: 'Project Simulator',
-    version: '1.9.0',
+    version: '1.10.0',
     description: 'Deterministic project analysis with dependency, environment, and decision-aware simulation',
     author: 'Gemini CLI Team',
     minCliVersion: '0.2.0',
@@ -135,6 +136,7 @@ class ProjectSimulatorPlugin implements IPlugin {
       riskLevel: policy.riskLevel,
       signals: policy.signals,
       recommendations: policy.recommendations,
+      nextActions: policy.nextActions,
     };
 
     return {
