@@ -10,6 +10,7 @@ import path from 'path';
 import { analyzePackageJson } from './dependency_inspector.js';
 import { inspectEnvironment } from './environment_inspector.js';
 import { evaluateSimulationPolicy } from './simulation_policy.js';
+import type { SimulationScenarioKind } from './simulation_policy.js';
 
 interface FileStatsLike {
   isFile(): boolean;
@@ -34,6 +35,7 @@ interface ProjectAnalysisData {
 
 interface SimulationData {
   scenario: string;
+  scenarioKind: SimulationScenarioKind;
   result: 'ok';
   timestamp: string;
   riskLevel: 'low' | 'medium' | 'high';
@@ -45,8 +47,8 @@ class ProjectSimulatorPlugin implements IPlugin {
   metadata: IPluginMetadata = {
     id: 'project-simulator',
     name: 'Project Simulator',
-    version: '1.7.0',
-    description: 'Deterministic project analysis with dependency, environment, and decision-aware simulation',
+    version: '1.8.0',
+    description: 'Deterministic project analysis with dependency, environment, and scenario-aware simulation',
     author: 'Gemini CLI Team',
     minCliVersion: '0.2.0',
     category: 'simulation',
@@ -76,7 +78,7 @@ class ProjectSimulatorPlugin implements IPlugin {
       },
       {
         name: 'simulate-scenario',
-        description: 'Run deterministic decision-aware simulation',
+        description: 'Run deterministic scenario-aware simulation',
         options: [
           {
             name: 'scenario',
@@ -125,6 +127,7 @@ class ProjectSimulatorPlugin implements IPlugin {
 
     const data: SimulationData = {
       scenario,
+      scenarioKind: policy.scenarioKind,
       result: 'ok',
       timestamp: new Date().toISOString(),
       riskLevel: policy.riskLevel,
