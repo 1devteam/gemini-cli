@@ -39,6 +39,7 @@ describe('ProjectSimulatorPlugin contract', () => {
     expect(typeof (result.data as { timestamp: unknown }).timestamp).toBe('string');
     expect(['low', 'medium', 'high']).toContain((result.data as { riskLevel: string }).riskLevel);
     expect(Array.isArray((result.data as { signals: unknown[] }).signals)).toBe(true);
+    expect(Array.isArray((result.data as { recommendations: unknown[] }).recommendations)).toBe(true);
   });
 
   it('defaults missing scenario to default', async () => {
@@ -61,5 +62,6 @@ describe('ProjectSimulatorPlugin contract', () => {
     });
     expect(['low', 'medium', 'high']).toContain((result.data as { riskLevel: string }).riskLevel);
     expect(Array.isArray((result.data as { signals: unknown[] }).signals)).toBe(true);
+    expect(Array.isArray((result.data as { recommendations: unknown[] }).recommendations)).toBe(true);
   });
 });
