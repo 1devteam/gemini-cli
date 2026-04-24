@@ -9,6 +9,7 @@ import type {
 import path from 'path';
 import { analyzePackageJson } from './dependency_inspector.js';
 import { inspectEnvironment } from './environment_inspector.js';
+import { evaluateSimulationPolicy } from './simulation_policy.js';
 
 interface FileStatsLike {
   isFile(): boolean;
@@ -43,7 +44,7 @@ class ProjectSimulatorPlugin implements IPlugin {
   metadata: IPluginMetadata = {
     id: 'project-simulator',
     name: 'Project Simulator',
-    version: '1.4.0',
+    version: '1.5.0',
     description: 'Deterministic project analysis with dependency, environment, and constraint-aware simulation',
     author: 'Gemini CLI Team',
     minCliVersion: '0.2.0',
@@ -113,20 +114,19 @@ class ProjectSimulatorPlugin implements IPlugin {
   private async handleSimulate(args: SimulateScenarioArgs): Promise<IPluginResult> {
     const scenario = typeof args.scenario === 'string' && args.scenario.trim() ? args.scenario : 'default';
     const environment = inspectEnvironment();
-    const signals: string[] = [];
-
-    if (environment.cpuCount < 2) signals.push('low-cpu');
-    if (environment.memoryMB < 4096) signals.push('low-memory');
-    if (scenario.includes('load') && environment.memoryMB < 8192) signals.push('load-memory-pressure');
-
-    const riskLevel: SimulationData['riskLevel'] = signals.length >= 2 ? 'high' : signals.length === 1 ? 'medium' : 'low';
+    const policy = evaluateSimulationPolicy({
+      scenario,
+      cpuCount: environment.cpuCount,
+      memoryMB: environment.memoryMB,
+      dependencyCount: 0,
+    });
 
     const data: SimulationData = {
       scenario,
       result: 'ok',
       timestamp: new Date().toISOString(),
-      riskLevel,
-      signals,
+      riskLevel: policy.riskLevel,
+      signals: policy.signals,
     };
 
     return {
