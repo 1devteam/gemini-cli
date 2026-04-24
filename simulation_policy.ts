@@ -1,5 +1,6 @@
 export type SimulationRiskLevel = 'low' | 'medium' | 'high';
 export type SimulationScenarioKind = 'load' | 'failure' | 'scaling' | 'security' | 'general';
+export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 
 export interface SimulationPolicyInput {
   scenario: string;
@@ -11,6 +12,7 @@ export interface SimulationPolicyInput {
 export interface SimulationPolicyResult {
   riskLevel: SimulationRiskLevel;
   scenarioKind: SimulationScenarioKind;
+  decision: SimulationDecision;
   signals: string[];
   recommendations: string[];
 }
@@ -23,6 +25,12 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('scaling') || normalized.includes('scale')) return 'scaling';
   if (normalized.includes('security')) return 'security';
   return 'general';
+}
+
+function decide(riskLevel: SimulationRiskLevel): SimulationDecision {
+  if (riskLevel === 'high') return 'block-until-reviewed';
+  if (riskLevel === 'medium') return 'proceed-with-caution';
+  return 'proceed';
 }
 
 export function evaluateSimulationPolicy(input: SimulationPolicyInput): SimulationPolicyResult {
@@ -64,9 +72,12 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     recommendations.push('No immediate constraint recommendations detected.');
   }
 
+  const riskLevel: SimulationRiskLevel = signals.length >= 2 ? 'high' : signals.length === 1 ? 'medium' : 'low';
+
   return {
-    riskLevel: signals.length >= 2 ? 'high' : signals.length === 1 ? 'medium' : 'low',
+    riskLevel,
     scenarioKind,
+    decision: decide(riskLevel),
     signals,
     recommendations,
   };
