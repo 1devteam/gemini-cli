@@ -33,6 +33,7 @@ describe('ProjectSimulatorPlugin contract', () => {
       message: 'Simulated load-test',
       data: {
         scenario: 'load-test',
+        scenarioKind: 'load',
         result: 'ok',
       },
     });
@@ -57,6 +58,7 @@ describe('ProjectSimulatorPlugin contract', () => {
       message: 'Simulated default',
       data: {
         scenario: 'default',
+        scenarioKind: 'general',
         result: 'ok',
       },
     });
