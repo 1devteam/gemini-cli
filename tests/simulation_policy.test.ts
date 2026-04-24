@@ -12,6 +12,7 @@ describe('Simulation policy', () => {
 
     expect(result.riskLevel).toBe('low');
     expect(result.scenarioKind).toBe('general');
+    expect(result.decision).toBe('proceed');
     expect(result.signals.length).toBe(0);
     expect(result.recommendations).toContain('No immediate constraint recommendations detected.');
   });
@@ -26,6 +27,7 @@ describe('Simulation policy', () => {
 
     expect(result.riskLevel).toBe('high');
     expect(result.scenarioKind).toBe('load');
+    expect(result.decision).toBe('block-until-reviewed');
     expect(result.signals.length).toBeGreaterThanOrEqual(2);
     expect(result.recommendations.length).toBeGreaterThanOrEqual(2);
   });
@@ -38,6 +40,7 @@ describe('Simulation policy', () => {
       dependencyCount: 101,
     });
 
+    expect(result.decision).toBe('proceed-with-caution');
     expect(result.signals).toContain('high-dependency-surface');
     expect(result.recommendations).toContain('Review dependency surface before scaling or deployment simulations.');
   });
@@ -51,6 +54,7 @@ describe('Simulation policy', () => {
     });
 
     expect(result.scenarioKind).toBe('scaling');
+    expect(result.decision).toBe('proceed-with-caution');
     expect(result.signals).toContain('scaling-cpu-pressure');
   });
 
@@ -63,6 +67,7 @@ describe('Simulation policy', () => {
     });
 
     expect(result.scenarioKind).toBe('security');
+    expect(result.decision).toBe('proceed-with-caution');
     expect(result.signals).toContain('security-dependency-review');
   });
 });
