@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import createProjectSimulatorPlugin from '../project_simulator_plugin.js';
 
+const simulatorContext = {
+  cwd: process.cwd(),
+  fs: {
+    exists: async () => false,
+    readFile: async () => '{}',
+  },
+} as never;
+
 describe('ProjectSimulatorPlugin contract', () => {
   it('exposes analyze and simulate commands', () => {
     const plugin = createProjectSimulatorPlugin();
@@ -18,7 +26,7 @@ describe('ProjectSimulatorPlugin contract', () => {
       throw new Error('simulate-scenario command not found');
     }
 
-    const result = await simulate.handler({ scenario: 'load-test' }, {} as never);
+    const result = await simulate.handler({ scenario: 'load-test' }, simulatorContext);
 
     expect(result).toMatchObject({
       success: true,
@@ -41,7 +49,7 @@ describe('ProjectSimulatorPlugin contract', () => {
       throw new Error('simulate-scenario command not found');
     }
 
-    const result = await simulate.handler({}, {} as never);
+    const result = await simulate.handler({}, simulatorContext);
 
     expect(result).toMatchObject({
       success: true,
