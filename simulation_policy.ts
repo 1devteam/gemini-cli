@@ -15,6 +15,7 @@ export interface SimulationPolicyResult {
   decision: SimulationDecision;
   signals: string[];
   recommendations: string[];
+  nextActions: string[];
 }
 
 function classifyScenario(scenario: string): SimulationScenarioKind {
@@ -31,6 +32,18 @@ function decide(riskLevel: SimulationRiskLevel): SimulationDecision {
   if (riskLevel === 'high') return 'block-until-reviewed';
   if (riskLevel === 'medium') return 'proceed-with-caution';
   return 'proceed';
+}
+
+function buildNextActions(decision: SimulationDecision, signals: string[]): string[] {
+  if (decision === 'block-until-reviewed') {
+    return ['Review blocking signals before execution.', 'Reduce constraint pressure or provision stronger runtime resources.'];
+  }
+
+  if (decision === 'proceed-with-caution') {
+    return ['Proceed with monitoring enabled.', 'Capture metrics for follow-up comparison.'];
+  }
+
+  return ['Proceed with baseline simulation run.'];
 }
 
 export function evaluateSimulationPolicy(input: SimulationPolicyInput): SimulationPolicyResult {
@@ -73,12 +86,14 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
   }
 
   const riskLevel: SimulationRiskLevel = signals.length >= 2 ? 'high' : signals.length === 1 ? 'medium' : 'low';
+  const decision = decide(riskLevel);
 
   return {
     riskLevel,
     scenarioKind,
-    decision: decide(riskLevel),
+    decision,
     signals,
     recommendations,
+    nextActions: buildNextActions(decision, signals),
   };
 }
