@@ -38,14 +38,15 @@ interface SimulationData {
   timestamp: string;
   riskLevel: 'low' | 'medium' | 'high';
   signals: string[];
+  recommendations: string[];
 }
 
 class ProjectSimulatorPlugin implements IPlugin {
   metadata: IPluginMetadata = {
     id: 'project-simulator',
     name: 'Project Simulator',
-    version: '1.6.0',
-    description: 'Deterministic project analysis with dependency, environment, and constraint-aware simulation',
+    version: '1.7.0',
+    description: 'Deterministic project analysis with dependency, environment, and decision-aware simulation',
     author: 'Gemini CLI Team',
     minCliVersion: '0.2.0',
     category: 'simulation',
@@ -75,7 +76,7 @@ class ProjectSimulatorPlugin implements IPlugin {
       },
       {
         name: 'simulate-scenario',
-        description: 'Run deterministic constraint-aware simulation',
+        description: 'Run deterministic decision-aware simulation',
         options: [
           {
             name: 'scenario',
@@ -128,6 +129,7 @@ class ProjectSimulatorPlugin implements IPlugin {
       timestamp: new Date().toISOString(),
       riskLevel: policy.riskLevel,
       signals: policy.signals,
+      recommendations: policy.recommendations,
     };
 
     return {
