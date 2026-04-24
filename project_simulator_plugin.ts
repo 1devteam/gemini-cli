@@ -35,14 +35,16 @@ interface SimulationData {
   scenario: string;
   result: 'ok';
   timestamp: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  signals: string[];
 }
 
 class ProjectSimulatorPlugin implements IPlugin {
   metadata: IPluginMetadata = {
     id: 'project-simulator',
     name: 'Project Simulator',
-    version: '1.3.0',
-    description: 'Deterministic project analysis with dependency and environment awareness',
+    version: '1.4.0',
+    description: 'Deterministic project analysis with dependency, environment, and constraint-aware simulation',
     author: 'Gemini CLI Team',
     minCliVersion: '0.2.0',
     category: 'simulation',
@@ -72,7 +74,7 @@ class ProjectSimulatorPlugin implements IPlugin {
       },
       {
         name: 'simulate-scenario',
-        description: 'Run deterministic simulation',
+        description: 'Run deterministic constraint-aware simulation',
         options: [
           {
             name: 'scenario',
@@ -110,10 +112,21 @@ class ProjectSimulatorPlugin implements IPlugin {
 
   private async handleSimulate(args: SimulateScenarioArgs): Promise<IPluginResult> {
     const scenario = typeof args.scenario === 'string' && args.scenario.trim() ? args.scenario : 'default';
+    const environment = inspectEnvironment();
+    const signals: string[] = [];
+
+    if (environment.cpuCount < 2) signals.push('low-cpu');
+    if (environment.memoryMB < 4096) signals.push('low-memory');
+    if (scenario.includes('load') && environment.memoryMB < 8192) signals.push('load-memory-pressure');
+
+    const riskLevel: SimulationData['riskLevel'] = signals.length >= 2 ? 'high' : signals.length === 1 ? 'medium' : 'low';
+
     const data: SimulationData = {
       scenario,
       result: 'ok',
       timestamp: new Date().toISOString(),
+      riskLevel,
+      signals,
     };
 
     return {
