@@ -60,6 +60,7 @@ export type SimulationScenarioKind =
   | 'canary'
   | 'blue-green'
   | 'shadow-traffic'
+  | 'chaos-testing'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -177,6 +178,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('canary') || normalized.includes('progressive rollout') || normalized.includes('traffic slice')) return 'canary';
   if (normalized.includes('blue-green') || normalized.includes('blue green') || normalized.includes('blue environment') || normalized.includes('green environment')) return 'blue-green';
   if (normalized.includes('shadow-traffic') || normalized.includes('shadow traffic') || normalized.includes('traffic mirror') || normalized.includes('mirrored traffic')) return 'shadow-traffic';
+  if (normalized.includes('chaos testing') || normalized.includes('chaos-testing') || normalized.includes('fault injection') || normalized.includes('failure injection')) return 'chaos-testing';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -468,6 +470,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('shadow-traffic-dependency-pressure')) {
       nextActions.push('Capture shadow-traffic baseline and mirrored request metrics before execution.');
+    }
+
+    if (signals.includes('chaos-testing-dependency-pressure')) {
+      nextActions.push('Capture chaos-testing baseline and fault injection blast-radius metrics before execution.');
     }
 
     return nextActions;
@@ -793,6 +799,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('shadow-traffic-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture mirrored request and traffic replay dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'chaos-testing') {
+    addAssumption(
+      assumptions,
+      'Chaos-testing behavior is inferred from scenario wording and dependency surface, not measured fault injection or blast-radius telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'chaos-testing' && input.dependencyCount > 50) {
+    signals.push('chaos-testing-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture fault injection and blast-radius dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
