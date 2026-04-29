@@ -50,6 +50,7 @@ export type SimulationScenarioKind =
   | 'rate-limit'
   | 'observability'
   | 'deployment'
+  | 'rollback'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -157,6 +158,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
   if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
+  if (normalized.includes('rollback') || normalized.includes('roll back') || normalized.includes('revert')) return 'rollback';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -410,6 +412,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
       nextActions.push('Capture deployment baseline and rollout health metrics before execution.');
     }
 
+    if (signals.includes('rollback-dependency-pressure')) {
+      nextActions.push('Capture rollback baseline and recovery health metrics before execution.');
+    }
+
     return nextActions;
   }
 
@@ -603,6 +609,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('deployment-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture rollout health and release dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'rollback') {
+    addAssumption(
+      assumptions,
+      'Rollback behavior is inferred from scenario wording and dependency surface, not measured revert or recovery telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'rollback' && input.dependencyCount > 50) {
+    signals.push('rollback-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture rollback readiness and recovery dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
