@@ -48,6 +48,7 @@ export type SimulationScenarioKind =
   | 'storage'
   | 'auth'
   | 'rate-limit'
+  | 'observability'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -154,6 +155,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
+  if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
   if (normalized.includes('config') || normalized.includes('env')) return 'config';
@@ -398,6 +400,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
       nextActions.push('Capture rate-limit baseline and quota enforcement metrics before execution.');
     }
 
+    if (signals.includes('observability-dependency-pressure')) {
+      nextActions.push('Capture observability baseline and telemetry coverage metrics before execution.');
+    }
+
     return nextActions;
   }
 
@@ -565,6 +571,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('rate-limit-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture throttle rate and quota enforcement metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'observability') {
+    addAssumption(
+      assumptions,
+      'Observability behavior is inferred from scenario wording and dependency surface, not measured log, metric, or trace telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'observability' && input.dependencyCount > 50) {
+    signals.push('observability-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture logging, metrics, and tracing coverage before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
