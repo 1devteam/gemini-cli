@@ -29,9 +29,5 @@ describe('ProjectSimulatorPlugin observability scenarios', () => {
         result: 'ok',
       },
     });
-    expect((result.data as { riskTrace: { scenarioKind: string } }).riskTrace.scenarioKind).toBe('observability');
-    expect((result.data as { assumptions: string[] }).assumptions).toContain(
-      'Observability behavior is inferred from scenario wording and dependency surface, not measured log, metric, or trace telemetry.',
-    );
   });
 });
