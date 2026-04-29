@@ -53,6 +53,7 @@ export type SimulationScenarioKind =
   | 'rollback'
   | 'migration'
   | 'multi-tenant'
+  | 'scheduler'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -163,6 +164,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('rollback') || normalized.includes('roll back') || normalized.includes('revert')) return 'rollback';
   if (normalized.includes('migration') || normalized.includes('migrate') || normalized.includes('schema change')) return 'migration';
   if (normalized.includes('multi-tenant') || normalized.includes('multitenant') || normalized.includes('tenant isolation') || normalized.includes('tenant')) return 'multi-tenant';
+  if (normalized.includes('scheduler') || normalized.includes('schedule') || normalized.includes('cron') || normalized.includes('job')) return 'scheduler';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -428,6 +430,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
       nextActions.push('Capture multi-tenant baseline and tenant isolation metrics before execution.');
     }
 
+    if (signals.includes('scheduler-dependency-pressure')) {
+      nextActions.push('Capture scheduler baseline and job timing metrics before execution.');
+    }
+
     return nextActions;
   }
 
@@ -660,6 +666,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('multi-tenant-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture tenant isolation and shared-resource dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'scheduler') {
+    addAssumption(
+      assumptions,
+      'Scheduler behavior is inferred from scenario wording and dependency surface, not measured job timing or dispatch telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'scheduler' && input.dependencyCount > 50) {
+    signals.push('scheduler-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture job dispatch and schedule drift dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
