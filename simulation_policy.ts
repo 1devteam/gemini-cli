@@ -58,6 +58,7 @@ export type SimulationScenarioKind =
   | 'api-contract'
   | 'feature-flag'
   | 'canary'
+  | 'blue-green'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -173,6 +174,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('api-contract') || normalized.includes('api contract') || normalized.includes('openapi') || normalized.includes('schema compatibility')) return 'api-contract';
   if (normalized.includes('feature-flag') || normalized.includes('feature flag') || normalized.includes('toggle') || normalized.includes('experiment')) return 'feature-flag';
   if (normalized.includes('canary') || normalized.includes('progressive rollout') || normalized.includes('traffic slice')) return 'canary';
+  if (normalized.includes('blue-green') || normalized.includes('blue green') || normalized.includes('blue environment') || normalized.includes('green environment')) return 'blue-green';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -456,6 +458,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('canary-dependency-pressure')) {
       nextActions.push('Capture canary baseline and progressive rollout metrics before execution.');
+    }
+
+    if (signals.includes('blue-green-dependency-pressure')) {
+      nextActions.push('Capture blue-green baseline and cutover health metrics before execution.');
     }
 
     return nextActions;
@@ -755,6 +761,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('canary-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture canary health and traffic-slice dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'blue-green') {
+    addAssumption(
+      assumptions,
+      'Blue-green behavior is inferred from scenario wording and dependency surface, not measured environment cutover or traffic-switch telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'blue-green' && input.dependencyCount > 50) {
+    signals.push('blue-green-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture blue-green cutover and environment dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
