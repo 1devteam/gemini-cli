@@ -61,6 +61,8 @@ export type SimulationScenarioKind =
   | 'blue-green'
   | 'shadow-traffic'
   | 'chaos-testing'
+  | 'disaster-recovery'
+  | 'data-consistency'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -179,6 +181,8 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('blue-green') || normalized.includes('blue green') || normalized.includes('blue environment') || normalized.includes('green environment')) return 'blue-green';
   if (normalized.includes('shadow-traffic') || normalized.includes('shadow traffic') || normalized.includes('traffic mirror') || normalized.includes('mirrored traffic')) return 'shadow-traffic';
   if (normalized.includes('chaos testing') || normalized.includes('chaos-testing') || normalized.includes('fault injection') || normalized.includes('failure injection')) return 'chaos-testing';
+  if (normalized.includes('disaster recovery') || normalized.includes('disaster-recovery') || normalized.includes('failover') || normalized.includes('backup recovery')) return 'disaster-recovery';
+  if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -474,6 +478,14 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('chaos-testing-dependency-pressure')) {
       nextActions.push('Capture chaos-testing baseline and fault injection blast-radius metrics before execution.');
+    }
+
+    if (signals.includes('disaster-recovery-dependency-pressure')) {
+      nextActions.push('Capture disaster-recovery baseline and recovery objective metrics before execution.');
+    }
+
+    if (signals.includes('data-consistency-dependency-pressure')) {
+      nextActions.push('Capture data-consistency baseline and replication consistency metrics before execution.');
     }
 
     return nextActions;
@@ -812,6 +824,32 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('chaos-testing-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture fault injection and blast-radius dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'disaster-recovery') {
+    addAssumption(
+      assumptions,
+      'Disaster-recovery behavior is inferred from scenario wording and dependency surface, not measured failover, restore, or backup telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'disaster-recovery' && input.dependencyCount > 50) {
+    signals.push('disaster-recovery-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture failover, restore, and backup dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'data-consistency') {
+    addAssumption(
+      assumptions,
+      'Data-consistency behavior is inferred from scenario wording and dependency surface, not measured replication lag, read repair, or consistency telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'data-consistency' && input.dependencyCount > 50) {
+    signals.push('data-consistency-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture replication lag, read repair, and consistency dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
