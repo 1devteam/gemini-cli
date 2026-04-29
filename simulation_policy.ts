@@ -57,6 +57,7 @@ export type SimulationScenarioKind =
   | 'webhook'
   | 'api-contract'
   | 'feature-flag'
+  | 'canary'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -171,6 +172,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('webhook') || normalized.includes('callback') || normalized.includes('event delivery') || normalized.includes('endpoint')) return 'webhook';
   if (normalized.includes('api-contract') || normalized.includes('api contract') || normalized.includes('openapi') || normalized.includes('schema compatibility')) return 'api-contract';
   if (normalized.includes('feature-flag') || normalized.includes('feature flag') || normalized.includes('toggle') || normalized.includes('experiment')) return 'feature-flag';
+  if (normalized.includes('canary') || normalized.includes('progressive rollout') || normalized.includes('traffic slice')) return 'canary';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -450,6 +452,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('feature-flag-dependency-pressure')) {
       nextActions.push('Capture feature-flag baseline and rollout safety metrics before execution.');
+    }
+
+    if (signals.includes('canary-dependency-pressure')) {
+      nextActions.push('Capture canary baseline and progressive rollout metrics before execution.');
     }
 
     return nextActions;
@@ -736,6 +742,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('feature-flag-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture flag rollout and toggle dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'canary') {
+    addAssumption(
+      assumptions,
+      'Canary behavior is inferred from scenario wording and dependency surface, not measured progressive rollout or traffic-slice telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'canary' && input.dependencyCount > 50) {
+    signals.push('canary-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture canary health and traffic-slice dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
