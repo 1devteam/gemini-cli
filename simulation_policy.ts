@@ -49,6 +49,7 @@ export type SimulationScenarioKind =
   | 'auth'
   | 'rate-limit'
   | 'observability'
+  | 'deployment'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -156,6 +157,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
   if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
+  if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
   if (normalized.includes('config') || normalized.includes('env')) return 'config';
@@ -404,6 +406,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
       nextActions.push('Capture observability baseline and telemetry coverage metrics before execution.');
     }
 
+    if (signals.includes('deployment-dependency-pressure')) {
+      nextActions.push('Capture deployment baseline and rollout health metrics before execution.');
+    }
+
     return nextActions;
   }
 
@@ -584,6 +590,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('observability-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture logging, metrics, and tracing coverage before runtime simulation.');
+  }
+
+  if (scenarioKind === 'deployment') {
+    addAssumption(
+      assumptions,
+      'Deployment behavior is inferred from scenario wording and dependency surface, not measured rollout or release telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'deployment' && input.dependencyCount > 50) {
+    signals.push('deployment-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture rollout health and release dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
