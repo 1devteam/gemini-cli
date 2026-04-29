@@ -52,6 +52,7 @@ export type SimulationScenarioKind =
   | 'deployment'
   | 'rollback'
   | 'migration'
+  | 'multi-tenant'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -161,6 +162,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
   if (normalized.includes('rollback') || normalized.includes('roll back') || normalized.includes('revert')) return 'rollback';
   if (normalized.includes('migration') || normalized.includes('migrate') || normalized.includes('schema change')) return 'migration';
+  if (normalized.includes('multi-tenant') || normalized.includes('multitenant') || normalized.includes('tenant isolation') || normalized.includes('tenant')) return 'multi-tenant';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -422,6 +424,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
       nextActions.push('Capture migration baseline and data integrity metrics before execution.');
     }
 
+    if (signals.includes('multi-tenant-dependency-pressure')) {
+      nextActions.push('Capture multi-tenant baseline and tenant isolation metrics before execution.');
+    }
+
     return nextActions;
   }
 
@@ -641,6 +647,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('migration-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture migration readiness and schema dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'multi-tenant') {
+    addAssumption(
+      assumptions,
+      'Multi-tenant behavior is inferred from scenario wording and dependency surface, not measured tenant isolation or noisy-neighbor telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'multi-tenant' && input.dependencyCount > 50) {
+    signals.push('multi-tenant-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture tenant isolation and shared-resource dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
