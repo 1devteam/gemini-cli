@@ -56,6 +56,7 @@ export type SimulationScenarioKind =
   | 'scheduler'
   | 'webhook'
   | 'api-contract'
+  | 'feature-flag'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -169,6 +170,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('scheduler') || normalized.includes('schedule') || normalized.includes('cron') || normalized.includes('job')) return 'scheduler';
   if (normalized.includes('webhook') || normalized.includes('callback') || normalized.includes('event delivery') || normalized.includes('endpoint')) return 'webhook';
   if (normalized.includes('api-contract') || normalized.includes('api contract') || normalized.includes('openapi') || normalized.includes('schema compatibility')) return 'api-contract';
+  if (normalized.includes('feature-flag') || normalized.includes('feature flag') || normalized.includes('toggle') || normalized.includes('experiment')) return 'feature-flag';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -446,6 +448,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
       nextActions.push('Capture api-contract baseline and compatibility metrics before execution.');
     }
 
+    if (signals.includes('feature-flag-dependency-pressure')) {
+      nextActions.push('Capture feature-flag baseline and rollout safety metrics before execution.');
+    }
+
     return nextActions;
   }
 
@@ -717,6 +723,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('api-contract-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture contract compatibility and schema dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'feature-flag') {
+    addAssumption(
+      assumptions,
+      'Feature-flag behavior is inferred from scenario wording and dependency surface, not measured rollout, toggle, or experiment telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'feature-flag' && input.dependencyCount > 50) {
+    signals.push('feature-flag-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture flag rollout and toggle dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
