@@ -59,6 +59,7 @@ export type SimulationScenarioKind =
   | 'feature-flag'
   | 'canary'
   | 'blue-green'
+  | 'shadow-traffic'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -175,6 +176,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('feature-flag') || normalized.includes('feature flag') || normalized.includes('toggle') || normalized.includes('experiment')) return 'feature-flag';
   if (normalized.includes('canary') || normalized.includes('progressive rollout') || normalized.includes('traffic slice')) return 'canary';
   if (normalized.includes('blue-green') || normalized.includes('blue green') || normalized.includes('blue environment') || normalized.includes('green environment')) return 'blue-green';
+  if (normalized.includes('shadow-traffic') || normalized.includes('shadow traffic') || normalized.includes('traffic mirror') || normalized.includes('mirrored traffic')) return 'shadow-traffic';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -462,6 +464,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('blue-green-dependency-pressure')) {
       nextActions.push('Capture blue-green baseline and cutover health metrics before execution.');
+    }
+
+    if (signals.includes('shadow-traffic-dependency-pressure')) {
+      nextActions.push('Capture shadow-traffic baseline and mirrored request metrics before execution.');
     }
 
     return nextActions;
@@ -774,6 +780,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('blue-green-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture blue-green cutover and environment dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'shadow-traffic') {
+    addAssumption(
+      assumptions,
+      'Shadow-traffic behavior is inferred from scenario wording and dependency surface, not measured mirrored request or production-traffic replay telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'shadow-traffic' && input.dependencyCount > 50) {
+    signals.push('shadow-traffic-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture mirrored request and traffic replay dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
