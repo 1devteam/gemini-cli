@@ -69,6 +69,7 @@ export type SimulationScenarioKind =
   | 'saga'
   | 'outbox'
   | 'dead-letter-queue'
+  | 'poison-pill'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -199,6 +200,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
   if (normalized.includes('config') || normalized.includes('env')) return 'config';
+  if (normalized.includes('poison pill') || normalized.includes('poison-pill') || normalized.includes('malformed message') || normalized.includes('bad payload') || normalized.includes('quarantine')) return 'poison-pill';
   if (normalized.includes('load')) return 'load';
   if (normalized.includes('failure') || normalized.includes('outage')) return 'failure';
   if (normalized.includes('scaling') || normalized.includes('scale')) return 'scaling';
@@ -522,6 +524,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('dead-letter-queue-dependency-pressure')) {
       nextActions.push('Capture dead-letter-queue baseline and poison-message metrics before execution.');
+    }
+
+    if (signals.includes('poison-pill-dependency-pressure')) {
+      nextActions.push('Capture poison-pill baseline and quarantine metrics before execution.');
     }
 
     return nextActions;
@@ -964,6 +970,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('dead-letter-queue-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture DLQ, poison-message, and retry-exhaustion dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'poison-pill') {
+    addAssumption(
+      assumptions,
+      'Poison-pill behavior is inferred from scenario wording and dependency surface, not measured malformed-message, bad-payload, or quarantine telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'poison-pill' && input.dependencyCount > 50) {
+    signals.push('poison-pill-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture malformed-message, bad-payload, and quarantine dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
