@@ -78,6 +78,11 @@ export type SimulationScenarioKind =
   | 'dependency-upgrade'
   | 'secret-rotation'
   | 'schema-validation'
+  | 'config-drift'
+  | 'certificate-expiry'
+  | 'dns-failover'
+  | 'health-check'
+  | 'load-shedding'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -186,6 +191,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
+  if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
   if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
@@ -205,6 +211,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('blue-green') || normalized.includes('blue green') || normalized.includes('blue environment') || normalized.includes('green environment')) return 'blue-green';
   if (normalized.includes('shadow-traffic') || normalized.includes('shadow traffic') || normalized.includes('traffic mirror') || normalized.includes('mirrored traffic')) return 'shadow-traffic';
   if (normalized.includes('chaos testing') || normalized.includes('chaos-testing') || normalized.includes('fault injection') || normalized.includes('failure injection')) return 'chaos-testing';
+  if (normalized.includes('dns failover') || normalized.includes('dns-failover') || normalized.includes('dns record switch') || normalized.includes('ttl propagation') || normalized.includes('resolver')) return 'dns-failover';
   if (normalized.includes('regional failover') || normalized.includes('regional-failover') || normalized.includes('cross region') || normalized.includes('traffic shift') || normalized.includes('secondary region')) return 'regional-failover';
   if (normalized.includes('disaster recovery') || normalized.includes('disaster-recovery') || normalized.includes('failover') || normalized.includes('backup recovery')) return 'disaster-recovery';
   if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
@@ -213,10 +220,13 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
+  if (normalized.includes('config drift') || normalized.includes('config-drift') || normalized.includes('configuration mismatch') || normalized.includes('desired state') || normalized.includes('drift detection')) return 'config-drift';
   if (normalized.includes('config') || normalized.includes('env')) return 'config';
   if (normalized.includes('poison pill') || normalized.includes('poison-pill') || normalized.includes('malformed message') || normalized.includes('bad payload') || normalized.includes('quarantine')) return 'poison-pill';
   if (normalized.includes('schema validation') || normalized.includes('schema-validation') || normalized.includes('json schema') || normalized.includes('payload validation') || normalized.includes('contract validation')) return 'schema-validation';
+  if (normalized.includes('health check') || normalized.includes('health-check') || normalized.includes('readiness probe') || normalized.includes('liveness probe') || normalized.includes('synthetic check')) return 'health-check';
   if (normalized.includes('capacity planning') || normalized.includes('capacity-planning') || normalized.includes('forecast demand') || normalized.includes('headroom') || normalized.includes('utilization')) return 'capacity-planning';
+  if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection') || normalized.includes('admission control')) return 'load-shedding';
   if (normalized.includes('load')) return 'load';
   if (normalized.includes('failure') || normalized.includes('outage')) return 'failure';
   if (normalized.includes('scaling') || normalized.includes('scale')) return 'scaling';
@@ -576,6 +586,26 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('schema-validation-dependency-pressure')) {
       nextActions.push('Capture schema-validation baseline and payload-validation metrics before execution.');
+    }
+
+    if (signals.includes('config-drift-dependency-pressure')) {
+      nextActions.push('Capture config-drift baseline and drift-detection metrics before execution.');
+    }
+
+    if (signals.includes('certificate-expiry-dependency-pressure')) {
+      nextActions.push('Capture certificate-expiry baseline and TLS renewal metrics before execution.');
+    }
+
+    if (signals.includes('dns-failover-dependency-pressure')) {
+      nextActions.push('Capture dns-failover baseline and TTL propagation metrics before execution.');
+    }
+
+    if (signals.includes('health-check-dependency-pressure')) {
+      nextActions.push('Capture health-check baseline and probe metrics before execution.');
+    }
+
+    if (signals.includes('load-shedding-dependency-pressure')) {
+      nextActions.push('Capture load-shedding baseline and admission-control metrics before execution.');
     }
 
     return nextActions;
@@ -1135,6 +1165,71 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('schema-validation-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture JSON-schema, payload-validation, and contract-validation dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'config-drift') {
+    addAssumption(
+      assumptions,
+      'Config-drift behavior is inferred from scenario wording and dependency surface, not measured configuration-mismatch or desired-state drift telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'config-drift' && input.dependencyCount > 50) {
+    signals.push('config-drift-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture configuration-mismatch, desired-state drift, and drift-detection dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'certificate-expiry') {
+    addAssumption(
+      assumptions,
+      'Certificate-expiry behavior is inferred from scenario wording and dependency surface, not measured TLS certificate renewal or cert-rotation telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'certificate-expiry' && input.dependencyCount > 50) {
+    signals.push('certificate-expiry-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture TLS certificate renewal, cert-rotation, and expiry dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'dns-failover') {
+    addAssumption(
+      assumptions,
+      'DNS-failover behavior is inferred from scenario wording and dependency surface, not measured DNS-record switch, TTL propagation, or resolver telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'dns-failover' && input.dependencyCount > 50) {
+    signals.push('dns-failover-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture DNS-record switch, TTL propagation, and resolver dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'health-check') {
+    addAssumption(
+      assumptions,
+      'Health-check behavior is inferred from scenario wording and dependency surface, not measured readiness-probe, liveness-probe, or synthetic-check telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'health-check' && input.dependencyCount > 50) {
+    signals.push('health-check-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture readiness-probe, liveness-probe, and synthetic-check dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'load-shedding') {
+    addAssumption(
+      assumptions,
+      'Load-shedding behavior is inferred from scenario wording and dependency surface, not measured excess-traffic rejection, overload-protection, or admission-control telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'load-shedding' && input.dependencyCount > 50) {
+    signals.push('load-shedding-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture excess-traffic rejection, overload-protection, and admission-control dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
