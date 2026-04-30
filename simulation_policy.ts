@@ -63,6 +63,7 @@ export type SimulationScenarioKind =
   | 'chaos-testing'
   | 'disaster-recovery'
   | 'data-consistency'
+  | 'idempotency'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -183,6 +184,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('chaos testing') || normalized.includes('chaos-testing') || normalized.includes('fault injection') || normalized.includes('failure injection')) return 'chaos-testing';
   if (normalized.includes('disaster recovery') || normalized.includes('disaster-recovery') || normalized.includes('failover') || normalized.includes('backup recovery')) return 'disaster-recovery';
   if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
+  if (normalized.includes('idempotency') || normalized.includes('idempotent') || normalized.includes('duplicate replay') || normalized.includes('duplicate request') || normalized.includes('dedupe')) return 'idempotency';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -486,6 +488,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('data-consistency-dependency-pressure')) {
       nextActions.push('Capture data-consistency baseline and replication consistency metrics before execution.');
+    }
+
+    if (signals.includes('idempotency-dependency-pressure')) {
+      nextActions.push('Capture idempotency baseline and duplicate request metrics before execution.');
     }
 
     return nextActions;
@@ -850,6 +856,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('data-consistency-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture replication lag, read repair, and consistency dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'idempotency') {
+    addAssumption(
+      assumptions,
+      'Idempotency behavior is inferred from scenario wording and dependency surface, not measured duplicate request or replay telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'idempotency' && input.dependencyCount > 50) {
+    signals.push('idempotency-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture duplicate request, replay, and dedupe dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
