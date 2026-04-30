@@ -70,6 +70,7 @@ export type SimulationScenarioKind =
   | 'outbox'
   | 'dead-letter-queue'
   | 'poison-pill'
+  | 'backpressure'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -179,6 +180,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
+  if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
   if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
   if (normalized.includes('rollback') || normalized.includes('roll back') || normalized.includes('revert')) return 'rollback';
@@ -528,6 +530,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('poison-pill-dependency-pressure')) {
       nextActions.push('Capture poison-pill baseline and quarantine metrics before execution.');
+    }
+
+    if (signals.includes('backpressure-dependency-pressure')) {
+      nextActions.push('Capture backpressure baseline and flow-control metrics before execution.');
     }
 
     return nextActions;
@@ -983,6 +989,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('poison-pill-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture malformed-message, bad-payload, and quarantine dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'backpressure') {
+    addAssumption(
+      assumptions,
+      'Backpressure behavior is inferred from scenario wording and dependency surface, not measured flow-control, pressure-signal, or producer-throttle telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'backpressure' && input.dependencyCount > 50) {
+    signals.push('backpressure-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture flow-control, pressure-signal, and producer-throttle dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
