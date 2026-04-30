@@ -67,6 +67,7 @@ export type SimulationScenarioKind =
   | 'circuit-breaker'
   | 'bulkhead'
   | 'saga'
+  | 'outbox'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -170,6 +171,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
   if (normalized.includes('saga') || normalized.includes('compensation') || normalized.includes('compensating transaction') || normalized.includes('transaction orchestration')) return 'saga';
+  if (normalized.includes('outbox') || normalized.includes('transactional outbox') || normalized.includes('event relay') || normalized.includes('message dispatch')) return 'outbox';
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
@@ -510,6 +512,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('saga-dependency-pressure')) {
       nextActions.push('Capture saga baseline and compensation workflow metrics before execution.');
+    }
+
+    if (signals.includes('outbox-dependency-pressure')) {
+      nextActions.push('Capture outbox baseline and event relay metrics before execution.');
     }
 
     return nextActions;
@@ -926,6 +932,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('saga-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture compensation, transaction orchestration, and dependency coordination metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'outbox') {
+    addAssumption(
+      assumptions,
+      'Outbox behavior is inferred from scenario wording and dependency surface, not measured transactional outbox or event relay telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'outbox' && input.dependencyCount > 50) {
+    signals.push('outbox-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture transactional outbox, event relay, and message dispatch dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
