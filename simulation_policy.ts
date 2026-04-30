@@ -71,6 +71,7 @@ export type SimulationScenarioKind =
   | 'dead-letter-queue'
   | 'poison-pill'
   | 'backpressure'
+  | 'brownout'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -181,6 +182,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
+  if (normalized.includes('brownout') || normalized.includes('graceful degradation') || normalized.includes('feature shedding') || normalized.includes('reduced capability')) return 'brownout';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
   if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
   if (normalized.includes('rollback') || normalized.includes('roll back') || normalized.includes('revert')) return 'rollback';
@@ -534,6 +536,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('backpressure-dependency-pressure')) {
       nextActions.push('Capture backpressure baseline and flow-control metrics before execution.');
+    }
+
+    if (signals.includes('brownout-dependency-pressure')) {
+      nextActions.push('Capture brownout baseline and graceful-degradation metrics before execution.');
     }
 
     return nextActions;
@@ -1002,6 +1008,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('backpressure-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture flow-control, pressure-signal, and producer-throttle dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'brownout') {
+    addAssumption(
+      assumptions,
+      'Brownout behavior is inferred from scenario wording and dependency surface, not measured graceful-degradation, feature-shedding, or reduced-capability telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'brownout' && input.dependencyCount > 50) {
+    signals.push('brownout-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture graceful-degradation, feature-shedding, and reduced-capability dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
