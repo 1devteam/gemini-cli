@@ -68,6 +68,7 @@ export type SimulationScenarioKind =
   | 'bulkhead'
   | 'saga'
   | 'outbox'
+  | 'dead-letter-queue'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -165,6 +166,7 @@ export interface SimulationPolicyResult {
 function classifyScenario(scenario: string): SimulationScenarioKind {
   const normalized = scenario.toLowerCase();
 
+  if (normalized.includes('dead letter queue') || normalized.includes('dead-letter-queue') || normalized.includes('dlq') || normalized.includes('poison message') || normalized.includes('retry exhausted')) return 'dead-letter-queue';
   if (normalized.includes('retry') || normalized.includes('storm')) return 'retry';
   if (normalized.includes('cold-start') || normalized.includes('cold start') || normalized.includes('startup')) return 'cold-start';
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
@@ -516,6 +518,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('outbox-dependency-pressure')) {
       nextActions.push('Capture outbox baseline and event relay metrics before execution.');
+    }
+
+    if (signals.includes('dead-letter-queue-dependency-pressure')) {
+      nextActions.push('Capture dead-letter-queue baseline and poison-message metrics before execution.');
     }
 
     return nextActions;
@@ -945,6 +951,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('outbox-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture transactional outbox, event relay, and message dispatch dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'dead-letter-queue') {
+    addAssumption(
+      assumptions,
+      'Dead-letter-queue behavior is inferred from scenario wording and dependency surface, not measured DLQ, poison-message, or retry-exhaustion telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'dead-letter-queue' && input.dependencyCount > 50) {
+    signals.push('dead-letter-queue-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture DLQ, poison-message, and retry-exhaustion dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
