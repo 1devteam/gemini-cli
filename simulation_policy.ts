@@ -66,6 +66,7 @@ export type SimulationScenarioKind =
   | 'idempotency'
   | 'circuit-breaker'
   | 'bulkhead'
+  | 'saga'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -168,6 +169,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
   if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
+  if (normalized.includes('saga') || normalized.includes('compensation') || normalized.includes('compensating transaction') || normalized.includes('transaction orchestration')) return 'saga';
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
@@ -504,6 +506,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('bulkhead-dependency-pressure')) {
       nextActions.push('Capture bulkhead baseline and isolation-pool metrics before execution.');
+    }
+
+    if (signals.includes('saga-dependency-pressure')) {
+      nextActions.push('Capture saga baseline and compensation workflow metrics before execution.');
     }
 
     return nextActions;
@@ -907,6 +913,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('bulkhead-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture isolation-pool, resource-partition, and dependency containment metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'saga') {
+    addAssumption(
+      assumptions,
+      'Saga behavior is inferred from scenario wording and dependency surface, not measured compensation or transaction orchestration telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'saga' && input.dependencyCount > 50) {
+    signals.push('saga-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture compensation, transaction orchestration, and dependency coordination metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
