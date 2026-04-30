@@ -73,6 +73,11 @@ export type SimulationScenarioKind =
   | 'backpressure'
   | 'brownout'
   | 'maintenance-window'
+  | 'regional-failover'
+  | 'capacity-planning'
+  | 'dependency-upgrade'
+  | 'secret-rotation'
+  | 'schema-validation'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -181,9 +186,11 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
+  if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
   if (normalized.includes('brownout') || normalized.includes('graceful degradation') || normalized.includes('feature shedding') || normalized.includes('reduced capability')) return 'brownout';
+  if (normalized.includes('dependency upgrade') || normalized.includes('dependency-upgrade') || normalized.includes('package bump') || normalized.includes('version compatibility')) return 'dependency-upgrade';
   if (normalized.includes('maintenance window') || normalized.includes('maintenance-window') || normalized.includes('planned downtime') || normalized.includes('service drain') || normalized.includes('upgrade')) return 'maintenance-window';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
   if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
@@ -198,6 +205,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('blue-green') || normalized.includes('blue green') || normalized.includes('blue environment') || normalized.includes('green environment')) return 'blue-green';
   if (normalized.includes('shadow-traffic') || normalized.includes('shadow traffic') || normalized.includes('traffic mirror') || normalized.includes('mirrored traffic')) return 'shadow-traffic';
   if (normalized.includes('chaos testing') || normalized.includes('chaos-testing') || normalized.includes('fault injection') || normalized.includes('failure injection')) return 'chaos-testing';
+  if (normalized.includes('regional failover') || normalized.includes('regional-failover') || normalized.includes('cross region') || normalized.includes('traffic shift') || normalized.includes('secondary region')) return 'regional-failover';
   if (normalized.includes('disaster recovery') || normalized.includes('disaster-recovery') || normalized.includes('failover') || normalized.includes('backup recovery')) return 'disaster-recovery';
   if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
   if (normalized.includes('idempotency') || normalized.includes('idempotent') || normalized.includes('duplicate replay') || normalized.includes('duplicate request') || normalized.includes('dedupe')) return 'idempotency';
@@ -207,6 +215,8 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
   if (normalized.includes('config') || normalized.includes('env')) return 'config';
   if (normalized.includes('poison pill') || normalized.includes('poison-pill') || normalized.includes('malformed message') || normalized.includes('bad payload') || normalized.includes('quarantine')) return 'poison-pill';
+  if (normalized.includes('schema validation') || normalized.includes('schema-validation') || normalized.includes('json schema') || normalized.includes('payload validation') || normalized.includes('contract validation')) return 'schema-validation';
+  if (normalized.includes('capacity planning') || normalized.includes('capacity-planning') || normalized.includes('forecast demand') || normalized.includes('headroom') || normalized.includes('utilization')) return 'capacity-planning';
   if (normalized.includes('load')) return 'load';
   if (normalized.includes('failure') || normalized.includes('outage')) return 'failure';
   if (normalized.includes('scaling') || normalized.includes('scale')) return 'scaling';
@@ -546,6 +556,26 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('maintenance-window-dependency-pressure')) {
       nextActions.push('Capture maintenance-window baseline and service-drain metrics before execution.');
+    }
+
+    if (signals.includes('regional-failover-dependency-pressure')) {
+      nextActions.push('Capture regional-failover baseline and cross-region traffic-shift metrics before execution.');
+    }
+
+    if (signals.includes('capacity-planning-dependency-pressure')) {
+      nextActions.push('Capture capacity-planning baseline and demand-forecast metrics before execution.');
+    }
+
+    if (signals.includes('dependency-upgrade-dependency-pressure')) {
+      nextActions.push('Capture dependency-upgrade baseline and version-compatibility metrics before execution.');
+    }
+
+    if (signals.includes('secret-rotation-dependency-pressure')) {
+      nextActions.push('Capture secret-rotation baseline and credential-rollover metrics before execution.');
+    }
+
+    if (signals.includes('schema-validation-dependency-pressure')) {
+      nextActions.push('Capture schema-validation baseline and payload-validation metrics before execution.');
     }
 
     return nextActions;
@@ -1040,6 +1070,71 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('maintenance-window-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture planned-downtime, service-drain, and upgrade dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'regional-failover') {
+    addAssumption(
+      assumptions,
+      'Regional-failover behavior is inferred from scenario wording and dependency surface, not measured cross-region traffic-shift or secondary-region telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'regional-failover' && input.dependencyCount > 50) {
+    signals.push('regional-failover-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture cross-region traffic-shift, secondary-region, and failover dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'capacity-planning') {
+    addAssumption(
+      assumptions,
+      'Capacity-planning behavior is inferred from scenario wording and dependency surface, not measured demand-forecast, headroom, or utilization telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'capacity-planning' && input.dependencyCount > 50) {
+    signals.push('capacity-planning-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture demand-forecast, headroom, and utilization dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'dependency-upgrade') {
+    addAssumption(
+      assumptions,
+      'Dependency-upgrade behavior is inferred from scenario wording and dependency surface, not measured package-bump or version-compatibility telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'dependency-upgrade' && input.dependencyCount > 50) {
+    signals.push('dependency-upgrade-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture package-bump, version-compatibility, and dependency upgrade metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'secret-rotation') {
+    addAssumption(
+      assumptions,
+      'Secret-rotation behavior is inferred from scenario wording and dependency surface, not measured credential-rollover, key-rotation, or token-refresh telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'secret-rotation' && input.dependencyCount > 50) {
+    signals.push('secret-rotation-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture credential-rollover, key-rotation, and token-refresh dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'schema-validation') {
+    addAssumption(
+      assumptions,
+      'Schema-validation behavior is inferred from scenario wording and dependency surface, not measured JSON-schema, payload-validation, or contract-validation telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'schema-validation' && input.dependencyCount > 50) {
+    signals.push('schema-validation-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture JSON-schema, payload-validation, and contract-validation dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
