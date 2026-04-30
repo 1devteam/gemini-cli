@@ -64,6 +64,7 @@ export type SimulationScenarioKind =
   | 'disaster-recovery'
   | 'data-consistency'
   | 'idempotency'
+  | 'circuit-breaker'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -185,6 +186,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('disaster recovery') || normalized.includes('disaster-recovery') || normalized.includes('failover') || normalized.includes('backup recovery')) return 'disaster-recovery';
   if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
   if (normalized.includes('idempotency') || normalized.includes('idempotent') || normalized.includes('duplicate replay') || normalized.includes('duplicate request') || normalized.includes('dedupe')) return 'idempotency';
+  if (normalized.includes('circuit breaker') || normalized.includes('circuit-breaker') || normalized.includes('open circuit') || normalized.includes('half open') || normalized.includes('trip threshold')) return 'circuit-breaker';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -492,6 +494,10 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('idempotency-dependency-pressure')) {
       nextActions.push('Capture idempotency baseline and duplicate request metrics before execution.');
+    }
+
+    if (signals.includes('circuit-breaker-dependency-pressure')) {
+      nextActions.push('Capture circuit-breaker baseline and trip-threshold metrics before execution.');
     }
 
     return nextActions;
@@ -869,6 +875,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('idempotency-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture duplicate request, replay, and dedupe dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'circuit-breaker') {
+    addAssumption(
+      assumptions,
+      'Circuit-breaker behavior is inferred from scenario wording and dependency surface, not measured open-circuit, half-open, or trip-threshold telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'circuit-breaker' && input.dependencyCount > 50) {
+    signals.push('circuit-breaker-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture open-circuit, half-open, and trip-threshold dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
