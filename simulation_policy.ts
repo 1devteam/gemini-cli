@@ -88,6 +88,11 @@ export type SimulationScenarioKind =
   | 'audit-log'
   | 'permission-boundary'
   | 'token-expiry'
+  | 'session-revocation'
+  | 'key-compromise'
+  | 'rate-limit-bypass'
+  | 'cors-policy'
+  | 'input-sanitization'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -188,6 +193,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('dead letter queue') || normalized.includes('dead-letter-queue') || normalized.includes('dlq') || normalized.includes('poison message') || normalized.includes('retry exhausted')) return 'dead-letter-queue';
   if (normalized.includes('retry') || normalized.includes('storm')) return 'retry';
   if (normalized.includes('cold-start') || normalized.includes('cold start') || normalized.includes('startup')) return 'cold-start';
+  if (normalized.includes('session revocation') || normalized.includes('session-revocation') || normalized.includes('revoked session') || normalized.includes('logout') || normalized.includes('token invalidation')) return 'session-revocation';
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
   if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
@@ -198,10 +204,14 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
   if (normalized.includes('token expiry') || normalized.includes('token-expiry') || normalized.includes('expired token') || normalized.includes('refresh token') || normalized.includes('session renewal')) return 'token-expiry';
+  if (normalized.includes('key compromise') || normalized.includes('key-compromise') || normalized.includes('compromised key') || normalized.includes('credential leak') || normalized.includes('key revoke')) return 'key-compromise';
   if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
   if (normalized.includes('permission boundary') || normalized.includes('permission-boundary') || normalized.includes('least privilege') || normalized.includes('scoped permission') || normalized.includes('access boundary')) return 'permission-boundary';
+  if (normalized.includes('cors policy') || normalized.includes('cors-policy') || normalized.includes('cross origin') || normalized.includes('allowed origin') || normalized.includes('preflight request')) return 'cors-policy';
+  if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
+  if (normalized.includes('rate limit bypass') || normalized.includes('rate-limit-bypass') || normalized.includes('quota bypass') || normalized.includes('throttle evasion') || normalized.includes('limit abuse')) return 'rate-limit-bypass';
   if (normalized.includes('brownout') || normalized.includes('graceful degradation') || normalized.includes('feature shedding') || normalized.includes('reduced capability')) return 'brownout';
   if (normalized.includes('dependency upgrade') || normalized.includes('dependency-upgrade') || normalized.includes('package bump') || normalized.includes('version compatibility')) return 'dependency-upgrade';
   if (normalized.includes('maintenance window') || normalized.includes('maintenance-window') || normalized.includes('planned downtime') || normalized.includes('service drain') || normalized.includes('upgrade')) return 'maintenance-window';
@@ -636,6 +646,26 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('token-expiry-dependency-pressure')) {
       nextActions.push('Capture token-expiry baseline and refresh-token metrics before execution.');
+    }
+
+    if (signals.includes('session-revocation-dependency-pressure')) {
+      nextActions.push('Capture session-revocation baseline and token-invalidation metrics before execution.');
+    }
+
+    if (signals.includes('key-compromise-dependency-pressure')) {
+      nextActions.push('Capture key-compromise baseline and key-revoke metrics before execution.');
+    }
+
+    if (signals.includes('rate-limit-bypass-dependency-pressure')) {
+      nextActions.push('Capture rate-limit-bypass baseline and throttle-evasion metrics before execution.');
+    }
+
+    if (signals.includes('cors-policy-dependency-pressure')) {
+      nextActions.push('Capture cors-policy baseline and preflight-request metrics before execution.');
+    }
+
+    if (signals.includes('input-sanitization-dependency-pressure')) {
+      nextActions.push('Capture input-sanitization baseline and injection-prevention metrics before execution.');
     }
 
     return nextActions;
@@ -1325,6 +1355,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('token-expiry-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture expired-token, refresh-token, and session-renewal dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'session-revocation') {
+    addAssumption(assumptions, 'Session-revocation behavior is inferred from scenario wording and dependency surface, not measured revoked-session, logout, or token-invalidation telemetry.');
+  }
+
+  if (scenarioKind === 'session-revocation' && input.dependencyCount > 50) {
+    signals.push('session-revocation-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture revoked-session, logout, and token-invalidation dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'key-compromise') {
+    addAssumption(assumptions, 'Key-compromise behavior is inferred from scenario wording and dependency surface, not measured compromised-key, credential-leak, or key-revoke telemetry.');
+  }
+
+  if (scenarioKind === 'key-compromise' && input.dependencyCount > 50) {
+    signals.push('key-compromise-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture compromised-key, credential-leak, and key-revoke dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'rate-limit-bypass') {
+    addAssumption(assumptions, 'Rate-limit-bypass behavior is inferred from scenario wording and dependency surface, not measured quota-bypass, throttle-evasion, or limit-abuse telemetry.');
+  }
+
+  if (scenarioKind === 'rate-limit-bypass' && input.dependencyCount > 50) {
+    signals.push('rate-limit-bypass-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture quota-bypass, throttle-evasion, and limit-abuse dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'cors-policy') {
+    addAssumption(assumptions, 'CORS-policy behavior is inferred from scenario wording and dependency surface, not measured cross-origin, allowed-origin, or preflight-request telemetry.');
+  }
+
+  if (scenarioKind === 'cors-policy' && input.dependencyCount > 50) {
+    signals.push('cors-policy-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture cross-origin, allowed-origin, and preflight-request dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'input-sanitization') {
+    addAssumption(assumptions, 'Input-sanitization behavior is inferred from scenario wording and dependency surface, not measured user-input, escaping, or injection-prevention telemetry.');
+  }
+
+  if (scenarioKind === 'input-sanitization' && input.dependencyCount > 50) {
+    signals.push('input-sanitization-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture user-input, escaping, validation, and injection-prevention dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
