@@ -93,6 +93,11 @@ export type SimulationScenarioKind =
   | 'rate-limit-bypass'
   | 'cors-policy'
   | 'input-sanitization'
+  | 'csrf-protection'
+  | 'xss-defense'
+  | 'sql-injection'
+  | 'ssrf-defense'
+  | 'request-signing'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -208,6 +213,11 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
   if (normalized.includes('permission boundary') || normalized.includes('permission-boundary') || normalized.includes('least privilege') || normalized.includes('scoped permission') || normalized.includes('access boundary')) return 'permission-boundary';
   if (normalized.includes('cors policy') || normalized.includes('cors-policy') || normalized.includes('cross origin') || normalized.includes('allowed origin') || normalized.includes('preflight request')) return 'cors-policy';
+  if (normalized.includes('csrf protection') || normalized.includes('csrf-protection') || normalized.includes('cross site request forgery') || normalized.includes('csrf token') || normalized.includes('same site cookie')) return 'csrf-protection';
+  if (normalized.includes('xss defense') || normalized.includes('xss-defense') || normalized.includes('cross site scripting') || normalized.includes('output encoding') || normalized.includes('content security policy')) return 'xss-defense';
+  if (normalized.includes('sql injection') || normalized.includes('sql-injection') || normalized.includes('parameterized query') || normalized.includes('prepared statement')) return 'sql-injection';
+  if (normalized.includes('ssrf defense') || normalized.includes('ssrf-defense') || normalized.includes('server side request forgery') || normalized.includes('metadata block') || normalized.includes('egress allowlist')) return 'ssrf-defense';
+  if (normalized.includes('request signing') || normalized.includes('request-signing') || normalized.includes('hmac signature') || normalized.includes('signed request') || normalized.includes('replay protection')) return 'request-signing';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
@@ -666,6 +676,26 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('input-sanitization-dependency-pressure')) {
       nextActions.push('Capture input-sanitization baseline and injection-prevention metrics before execution.');
+    }
+
+    if (signals.includes('csrf-protection-dependency-pressure')) {
+      nextActions.push('Capture csrf-protection baseline and CSRF-token metrics before execution.');
+    }
+
+    if (signals.includes('xss-defense-dependency-pressure')) {
+      nextActions.push('Capture xss-defense baseline and output-encoding metrics before execution.');
+    }
+
+    if (signals.includes('sql-injection-dependency-pressure')) {
+      nextActions.push('Capture sql-injection baseline and prepared-statement metrics before execution.');
+    }
+
+    if (signals.includes('ssrf-defense-dependency-pressure')) {
+      nextActions.push('Capture ssrf-defense baseline and egress-allowlist metrics before execution.');
+    }
+
+    if (signals.includes('request-signing-dependency-pressure')) {
+      nextActions.push('Capture request-signing baseline and replay-protection metrics before execution.');
     }
 
     return nextActions;
@@ -1405,6 +1435,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('input-sanitization-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture user-input, escaping, validation, and injection-prevention dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'csrf-protection') {
+    addAssumption(assumptions, 'CSRF-protection behavior is inferred from scenario wording and dependency surface, not measured CSRF-token or same-site-cookie telemetry.');
+  }
+
+  if (scenarioKind === 'csrf-protection' && input.dependencyCount > 50) {
+    signals.push('csrf-protection-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture CSRF-token, same-site-cookie, and request-forgery dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'xss-defense') {
+    addAssumption(assumptions, 'XSS-defense behavior is inferred from scenario wording and dependency surface, not measured output-encoding or content-security-policy telemetry.');
+  }
+
+  if (scenarioKind === 'xss-defense' && input.dependencyCount > 50) {
+    signals.push('xss-defense-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture output-encoding, content-security-policy, and cross-site-scripting dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'sql-injection') {
+    addAssumption(assumptions, 'SQL-injection behavior is inferred from scenario wording and dependency surface, not measured parameterized-query or prepared-statement telemetry.');
+  }
+
+  if (scenarioKind === 'sql-injection' && input.dependencyCount > 50) {
+    signals.push('sql-injection-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture parameterized-query, prepared-statement, and injection-prevention dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'ssrf-defense') {
+    addAssumption(assumptions, 'SSRF-defense behavior is inferred from scenario wording and dependency surface, not measured metadata-block, egress-allowlist, or server-side-request-forgery telemetry.');
+  }
+
+  if (scenarioKind === 'ssrf-defense' && input.dependencyCount > 50) {
+    signals.push('ssrf-defense-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture metadata-block, egress-allowlist, and server-side-request-forgery dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'request-signing') {
+    addAssumption(assumptions, 'Request-signing behavior is inferred from scenario wording and dependency surface, not measured HMAC-signature, signed-request, or replay-protection telemetry.');
+  }
+
+  if (scenarioKind === 'request-signing' && input.dependencyCount > 50) {
+    signals.push('request-signing-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture HMAC-signature, signed-request, and replay-protection dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
