@@ -98,6 +98,11 @@ export type SimulationScenarioKind =
   | 'sql-injection'
   | 'ssrf-defense'
   | 'request-signing'
+  | 'artifact-integrity'
+  | 'supply-chain'
+  | 'dependency-vulnerability'
+  | 'license-compliance'
+  | 'sbom-generation'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -218,6 +223,11 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('sql injection') || normalized.includes('sql-injection') || normalized.includes('parameterized query') || normalized.includes('prepared statement')) return 'sql-injection';
   if (normalized.includes('ssrf defense') || normalized.includes('ssrf-defense') || normalized.includes('server side request forgery') || normalized.includes('metadata block') || normalized.includes('egress allowlist')) return 'ssrf-defense';
   if (normalized.includes('request signing') || normalized.includes('request-signing') || normalized.includes('hmac signature') || normalized.includes('signed request') || normalized.includes('replay protection')) return 'request-signing';
+  if (normalized.includes('artifact integrity') || normalized.includes('artifact-integrity') || normalized.includes('checksum verification') || normalized.includes('signed artifact') || normalized.includes('provenance')) return 'artifact-integrity';
+  if (normalized.includes('supply chain') || normalized.includes('supply-chain') || normalized.includes('build provenance') || normalized.includes('package integrity') || normalized.includes('dependency trust')) return 'supply-chain';
+  if (normalized.includes('dependency vulnerability') || normalized.includes('dependency-vulnerability') || normalized.includes('vulnerable package') || normalized.includes('cve exposure') || normalized.includes('advisory')) return 'dependency-vulnerability';
+  if (normalized.includes('license compliance') || normalized.includes('license-compliance') || normalized.includes('license audit') || normalized.includes('prohibited license') || normalized.includes('attribution policy')) return 'license-compliance';
+  if (normalized.includes('sbom generation') || normalized.includes('sbom-generation') || normalized.includes('software bill materials') || normalized.includes('component inventory') || normalized.includes('package manifest')) return 'sbom-generation';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
@@ -696,6 +706,26 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('request-signing-dependency-pressure')) {
       nextActions.push('Capture request-signing baseline and replay-protection metrics before execution.');
+    }
+
+    if (signals.includes('artifact-integrity-dependency-pressure')) {
+      nextActions.push('Capture artifact-integrity baseline and provenance metrics before execution.');
+    }
+
+    if (signals.includes('supply-chain-dependency-pressure')) {
+      nextActions.push('Capture supply-chain baseline and package-integrity metrics before execution.');
+    }
+
+    if (signals.includes('dependency-vulnerability-dependency-pressure')) {
+      nextActions.push('Capture dependency-vulnerability baseline and advisory metrics before execution.');
+    }
+
+    if (signals.includes('license-compliance-dependency-pressure')) {
+      nextActions.push('Capture license-compliance baseline and license-audit metrics before execution.');
+    }
+
+    if (signals.includes('sbom-generation-dependency-pressure')) {
+      nextActions.push('Capture sbom-generation baseline and component-inventory metrics before execution.');
     }
 
     return nextActions;
@@ -1485,6 +1515,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('request-signing-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture HMAC-signature, signed-request, and replay-protection dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'artifact-integrity') {
+    addAssumption(assumptions, 'Artifact-integrity behavior is inferred from scenario wording and dependency surface, not measured checksum-verification, signed-artifact, or provenance telemetry.');
+  }
+
+  if (scenarioKind === 'artifact-integrity' && input.dependencyCount > 50) {
+    signals.push('artifact-integrity-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture checksum-verification, signed-artifact, and provenance dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'supply-chain') {
+    addAssumption(assumptions, 'Supply-chain behavior is inferred from scenario wording and dependency surface, not measured build-provenance, package-integrity, or dependency-trust telemetry.');
+  }
+
+  if (scenarioKind === 'supply-chain' && input.dependencyCount > 50) {
+    signals.push('supply-chain-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture build-provenance, package-integrity, and dependency-trust metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'dependency-vulnerability') {
+    addAssumption(assumptions, 'Dependency-vulnerability behavior is inferred from scenario wording and dependency surface, not measured vulnerable-package, CVE-exposure, or advisory telemetry.');
+  }
+
+  if (scenarioKind === 'dependency-vulnerability' && input.dependencyCount > 50) {
+    signals.push('dependency-vulnerability-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture vulnerable-package, CVE-exposure, and advisory dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'license-compliance') {
+    addAssumption(assumptions, 'License-compliance behavior is inferred from scenario wording and dependency surface, not measured license-audit, prohibited-license, or attribution-policy telemetry.');
+  }
+
+  if (scenarioKind === 'license-compliance' && input.dependencyCount > 50) {
+    signals.push('license-compliance-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture license-audit, prohibited-license, and attribution-policy dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'sbom-generation') {
+    addAssumption(assumptions, 'SBOM-generation behavior is inferred from scenario wording and dependency surface, not measured software-bill-of-materials, component-inventory, or package-manifest telemetry.');
+  }
+
+  if (scenarioKind === 'sbom-generation' && input.dependencyCount > 50) {
+    signals.push('sbom-generation-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture software-bill-of-materials, component-inventory, and package-manifest dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
