@@ -103,6 +103,11 @@ export type SimulationScenarioKind =
   | 'dependency-vulnerability'
   | 'license-compliance'
   | 'sbom-generation'
+  | 'container-scan'
+  | 'image-signing'
+  | 'policy-as-code'
+  | 'admission-control'
+  | 'runtime-detection'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -228,6 +233,12 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('dependency vulnerability') || normalized.includes('dependency-vulnerability') || normalized.includes('vulnerable package') || normalized.includes('cve exposure') || normalized.includes('advisory')) return 'dependency-vulnerability';
   if (normalized.includes('license compliance') || normalized.includes('license-compliance') || normalized.includes('license audit') || normalized.includes('prohibited license') || normalized.includes('attribution policy')) return 'license-compliance';
   if (normalized.includes('sbom generation') || normalized.includes('sbom-generation') || normalized.includes('software bill materials') || normalized.includes('component inventory') || normalized.includes('package manifest')) return 'sbom-generation';
+  if (normalized.includes('container scan') || normalized.includes('container-scan') || normalized.includes('image vulnerability') || normalized.includes('layer scan') || normalized.includes('registry assessment')) return 'container-scan';
+  if (normalized.includes('image signing') || normalized.includes('image-signing') || normalized.includes('signed image') || normalized.includes('signature verification') || normalized.includes('registry trust')) return 'image-signing';
+  if (normalized.includes('policy as code') || normalized.includes('policy-as-code') || normalized.includes('opa rule evaluation') || normalized.includes('policy bundle') || normalized.includes('guardrail')) return 'policy-as-code';
+  if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection')) return 'load-shedding';
+  if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
+  if (normalized.includes('runtime detection') || normalized.includes('runtime-detection') || normalized.includes('anomaly detection') || normalized.includes('behavior monitoring') || normalized.includes('intrusion detection')) return 'runtime-detection';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
@@ -266,7 +277,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('poison pill') || normalized.includes('poison-pill') || normalized.includes('malformed message') || normalized.includes('bad payload') || normalized.includes('quarantine')) return 'poison-pill';
   if (normalized.includes('schema validation') || normalized.includes('schema-validation') || normalized.includes('json schema') || normalized.includes('payload validation') || normalized.includes('contract validation')) return 'schema-validation';
   if (normalized.includes('capacity planning') || normalized.includes('capacity-planning') || normalized.includes('forecast demand') || normalized.includes('headroom') || normalized.includes('utilization')) return 'capacity-planning';
-  if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection') || normalized.includes('admission control')) return 'load-shedding';
   if (normalized.includes('load')) return 'load';
   if (normalized.includes('failure') || normalized.includes('outage')) return 'failure';
   if (normalized.includes('scaling') || normalized.includes('scale')) return 'scaling';
@@ -726,6 +736,26 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('sbom-generation-dependency-pressure')) {
       nextActions.push('Capture sbom-generation baseline and component-inventory metrics before execution.');
+    }
+
+    if (signals.includes('container-scan-dependency-pressure')) {
+      nextActions.push('Capture container-scan baseline and layer-scan metrics before execution.');
+    }
+
+    if (signals.includes('image-signing-dependency-pressure')) {
+      nextActions.push('Capture image-signing baseline and signature-verification metrics before execution.');
+    }
+
+    if (signals.includes('policy-as-code-dependency-pressure')) {
+      nextActions.push('Capture policy-as-code baseline and rule-evaluation metrics before execution.');
+    }
+
+    if (signals.includes('admission-control-dependency-pressure')) {
+      nextActions.push('Capture admission-control baseline and policy-enforcement metrics before execution.');
+    }
+
+    if (signals.includes('runtime-detection-dependency-pressure')) {
+      nextActions.push('Capture runtime-detection baseline and anomaly-detection metrics before execution.');
     }
 
     return nextActions;
@@ -1565,6 +1595,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('sbom-generation-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture software-bill-of-materials, component-inventory, and package-manifest dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'container-scan') {
+    addAssumption(assumptions, 'Container-scan behavior is inferred from scenario wording and dependency surface, not measured image-vulnerability, layer-scan, or registry-assessment telemetry.');
+  }
+
+  if (scenarioKind === 'container-scan' && input.dependencyCount > 50) {
+    signals.push('container-scan-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture image-vulnerability, layer-scan, and registry-assessment dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'image-signing') {
+    addAssumption(assumptions, 'Image-signing behavior is inferred from scenario wording and dependency surface, not measured signed-image, signature-verification, or registry-trust telemetry.');
+  }
+
+  if (scenarioKind === 'image-signing' && input.dependencyCount > 50) {
+    signals.push('image-signing-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture signed-image, signature-verification, and registry-trust dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'policy-as-code') {
+    addAssumption(assumptions, 'Policy-as-code behavior is inferred from scenario wording and dependency surface, not measured OPA rule-evaluation, policy-bundle, or guardrail telemetry.');
+  }
+
+  if (scenarioKind === 'policy-as-code' && input.dependencyCount > 50) {
+    signals.push('policy-as-code-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture OPA rule-evaluation, policy-bundle, and guardrail dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'admission-control') {
+    addAssumption(assumptions, 'Admission-control behavior is inferred from scenario wording and dependency surface, not measured admission-webhook, policy-enforcement, or deny-request telemetry.');
+  }
+
+  if (scenarioKind === 'admission-control' && input.dependencyCount > 50) {
+    signals.push('admission-control-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture admission-webhook, policy-enforcement, and deny-request dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'runtime-detection') {
+    addAssumption(assumptions, 'Runtime-detection behavior is inferred from scenario wording and dependency surface, not measured anomaly-detection, behavior-monitoring, or intrusion-detection telemetry.');
+  }
+
+  if (scenarioKind === 'runtime-detection' && input.dependencyCount > 50) {
+    signals.push('runtime-detection-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture anomaly-detection, behavior-monitoring, and intrusion-detection dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
