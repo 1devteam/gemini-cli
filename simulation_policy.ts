@@ -83,6 +83,11 @@ export type SimulationScenarioKind =
   | 'dns-failover'
   | 'health-check'
   | 'load-shedding'
+  | 'traffic-replay'
+  | 'synthetic-monitoring'
+  | 'audit-log'
+  | 'permission-boundary'
+  | 'token-expiry'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -192,13 +197,18 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
+  if (normalized.includes('token expiry') || normalized.includes('token-expiry') || normalized.includes('expired token') || normalized.includes('refresh token') || normalized.includes('session renewal')) return 'token-expiry';
   if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
+  if (normalized.includes('permission boundary') || normalized.includes('permission-boundary') || normalized.includes('least privilege') || normalized.includes('scoped permission') || normalized.includes('access boundary')) return 'permission-boundary';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
   if (normalized.includes('brownout') || normalized.includes('graceful degradation') || normalized.includes('feature shedding') || normalized.includes('reduced capability')) return 'brownout';
   if (normalized.includes('dependency upgrade') || normalized.includes('dependency-upgrade') || normalized.includes('package bump') || normalized.includes('version compatibility')) return 'dependency-upgrade';
   if (normalized.includes('maintenance window') || normalized.includes('maintenance-window') || normalized.includes('planned downtime') || normalized.includes('service drain') || normalized.includes('upgrade')) return 'maintenance-window';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
+  if (normalized.includes('synthetic monitoring') || normalized.includes('synthetic-monitoring') || normalized.includes('canary monitor')) return 'synthetic-monitoring';
+  if (normalized.includes('health check') || normalized.includes('health-check') || normalized.includes('readiness probe') || normalized.includes('liveness probe') || normalized.includes('synthetic check')) return 'health-check';
+  if (normalized.includes('audit log') || normalized.includes('audit-log') || normalized.includes('immutable audit trail') || normalized.includes('compliance event') || normalized.includes('event history')) return 'audit-log';
   if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
   if (normalized.includes('rollback') || normalized.includes('roll back') || normalized.includes('revert')) return 'rollback';
   if (normalized.includes('migration') || normalized.includes('migrate') || normalized.includes('schema change')) return 'migration';
@@ -209,6 +219,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('feature-flag') || normalized.includes('feature flag') || normalized.includes('toggle') || normalized.includes('experiment')) return 'feature-flag';
   if (normalized.includes('canary') || normalized.includes('progressive rollout') || normalized.includes('traffic slice')) return 'canary';
   if (normalized.includes('blue-green') || normalized.includes('blue green') || normalized.includes('blue environment') || normalized.includes('green environment')) return 'blue-green';
+  if (normalized.includes('traffic replay') || normalized.includes('traffic-replay') || normalized.includes('captured traffic') || normalized.includes('session replay') || normalized.includes('production request')) return 'traffic-replay';
   if (normalized.includes('shadow-traffic') || normalized.includes('shadow traffic') || normalized.includes('traffic mirror') || normalized.includes('mirrored traffic')) return 'shadow-traffic';
   if (normalized.includes('chaos testing') || normalized.includes('chaos-testing') || normalized.includes('fault injection') || normalized.includes('failure injection')) return 'chaos-testing';
   if (normalized.includes('dns failover') || normalized.includes('dns-failover') || normalized.includes('dns record switch') || normalized.includes('ttl propagation') || normalized.includes('resolver')) return 'dns-failover';
@@ -224,7 +235,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('config') || normalized.includes('env')) return 'config';
   if (normalized.includes('poison pill') || normalized.includes('poison-pill') || normalized.includes('malformed message') || normalized.includes('bad payload') || normalized.includes('quarantine')) return 'poison-pill';
   if (normalized.includes('schema validation') || normalized.includes('schema-validation') || normalized.includes('json schema') || normalized.includes('payload validation') || normalized.includes('contract validation')) return 'schema-validation';
-  if (normalized.includes('health check') || normalized.includes('health-check') || normalized.includes('readiness probe') || normalized.includes('liveness probe') || normalized.includes('synthetic check')) return 'health-check';
   if (normalized.includes('capacity planning') || normalized.includes('capacity-planning') || normalized.includes('forecast demand') || normalized.includes('headroom') || normalized.includes('utilization')) return 'capacity-planning';
   if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection') || normalized.includes('admission control')) return 'load-shedding';
   if (normalized.includes('load')) return 'load';
@@ -606,6 +616,26 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('load-shedding-dependency-pressure')) {
       nextActions.push('Capture load-shedding baseline and admission-control metrics before execution.');
+    }
+
+    if (signals.includes('traffic-replay-dependency-pressure')) {
+      nextActions.push('Capture traffic-replay baseline and captured-traffic metrics before execution.');
+    }
+
+    if (signals.includes('synthetic-monitoring-dependency-pressure')) {
+      nextActions.push('Capture synthetic-monitoring baseline and probe metrics before execution.');
+    }
+
+    if (signals.includes('audit-log-dependency-pressure')) {
+      nextActions.push('Capture audit-log baseline and compliance-event metrics before execution.');
+    }
+
+    if (signals.includes('permission-boundary-dependency-pressure')) {
+      nextActions.push('Capture permission-boundary baseline and scoped-permission metrics before execution.');
+    }
+
+    if (signals.includes('token-expiry-dependency-pressure')) {
+      nextActions.push('Capture token-expiry baseline and refresh-token metrics before execution.');
     }
 
     return nextActions;
@@ -1230,6 +1260,71 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('load-shedding-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture excess-traffic rejection, overload-protection, and admission-control dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'traffic-replay') {
+    addAssumption(
+      assumptions,
+      'Traffic-replay behavior is inferred from scenario wording and dependency surface, not measured captured-traffic, session-replay, or production-request telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'traffic-replay' && input.dependencyCount > 50) {
+    signals.push('traffic-replay-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture captured-traffic, session-replay, and production-request dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'synthetic-monitoring') {
+    addAssumption(
+      assumptions,
+      'Synthetic-monitoring behavior is inferred from scenario wording and dependency surface, not measured synthetic-check, probe, or canary-monitor telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'synthetic-monitoring' && input.dependencyCount > 50) {
+    signals.push('synthetic-monitoring-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture synthetic-check, probe, and canary-monitor dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'audit-log') {
+    addAssumption(
+      assumptions,
+      'Audit-log behavior is inferred from scenario wording and dependency surface, not measured immutable-audit-trail or compliance-event telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'audit-log' && input.dependencyCount > 50) {
+    signals.push('audit-log-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture immutable-audit-trail, compliance-event, and event-history dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'permission-boundary') {
+    addAssumption(
+      assumptions,
+      'Permission-boundary behavior is inferred from scenario wording and dependency surface, not measured least-privilege, scoped-permission, or access-boundary telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'permission-boundary' && input.dependencyCount > 50) {
+    signals.push('permission-boundary-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture least-privilege, scoped-permission, and access-boundary dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'token-expiry') {
+    addAssumption(
+      assumptions,
+      'Token-expiry behavior is inferred from scenario wording and dependency surface, not measured expired-token, refresh-token, or session-renewal telemetry.',
+    );
+  }
+
+  if (scenarioKind === 'token-expiry' && input.dependencyCount > 50) {
+    signals.push('token-expiry-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture expired-token, refresh-token, and session-renewal dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
