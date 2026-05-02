@@ -113,6 +113,11 @@ export type SimulationScenarioKind =
   | 'secrets-mount'
   | 'privilege-escalation'
   | 'sandbox-escape'
+  | 'iam-misconfiguration'
+  | 'cross-account-access'
+  | 'service-mesh-policy'
+  | 'api-gateway-security'
+  | 'rate-limiting-abuse'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -243,12 +248,17 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('image signing') || normalized.includes('image-signing') || normalized.includes('signed image') || normalized.includes('signature verification') || normalized.includes('registry trust')) return 'image-signing';
   if (normalized.includes('policy as code') || normalized.includes('policy-as-code') || normalized.includes('opa rule evaluation') || normalized.includes('policy bundle') || normalized.includes('guardrail')) return 'policy-as-code';
   if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection')) return 'load-shedding';
+  if (normalized.includes('service mesh policy') || normalized.includes('service-mesh-policy') || normalized.includes('sidecar mtls') || normalized.includes('traffic policy') || normalized.includes('mesh enforcement')) return 'service-mesh-policy';
   if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
   if (normalized.includes('runtime detection') || normalized.includes('runtime-detection') || normalized.includes('anomaly detection') || normalized.includes('behavior monitoring') || normalized.includes('intrusion detection')) return 'runtime-detection';
   if (normalized.includes('pod security') || normalized.includes('pod-security') || normalized.includes('restricted pod') || normalized.includes('pod security standard') || normalized.includes('run as non root')) return 'pod-security';
   if (normalized.includes('secrets mount') || normalized.includes('secrets-mount') || normalized.includes('secret volume') || normalized.includes('projected secret') || normalized.includes('secret file permission')) return 'secrets-mount';
   if (normalized.includes('privilege escalation') || normalized.includes('privilege-escalation') || normalized.includes('escalated privilege') || normalized.includes('root capability') || normalized.includes('setuid')) return 'privilege-escalation';
   if (normalized.includes('sandbox escape') || normalized.includes('sandbox-escape') || normalized.includes('container breakout') || normalized.includes('namespace escape') || normalized.includes('isolation bypass')) return 'sandbox-escape';
+  if (normalized.includes('iam misconfiguration') || normalized.includes('iam-misconfiguration') || normalized.includes('overly permissive role') || normalized.includes('wildcard policy') || normalized.includes('access grant')) return 'iam-misconfiguration';
+  if (normalized.includes('cross account access') || normalized.includes('cross-account-access') || normalized.includes('external account') || normalized.includes('trust boundary') || normalized.includes('assume role')) return 'cross-account-access';
+  if (normalized.includes('api gateway security') || normalized.includes('api-gateway-security') || normalized.includes('gateway auth layer') || normalized.includes('request validation') || normalized.includes('gateway security')) return 'api-gateway-security';
+  if (normalized.includes('rate limiting abuse') || normalized.includes('rate-limiting-abuse') || normalized.includes('excessive requests') || normalized.includes('throttling abuse') || normalized.includes('rate control abuse')) return 'rate-limiting-abuse';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
@@ -256,6 +266,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('brownout') || normalized.includes('graceful degradation') || normalized.includes('feature shedding') || normalized.includes('reduced capability')) return 'brownout';
   if (normalized.includes('dependency upgrade') || normalized.includes('dependency-upgrade') || normalized.includes('package bump') || normalized.includes('version compatibility')) return 'dependency-upgrade';
   if (normalized.includes('maintenance window') || normalized.includes('maintenance-window') || normalized.includes('planned downtime') || normalized.includes('service drain') || normalized.includes('upgrade')) return 'maintenance-window';
+  if (normalized.includes('rate limiting abuse') || normalized.includes('rate-limiting-abuse') || normalized.includes('excessive requests') || normalized.includes('throttling abuse') || normalized.includes('rate control abuse')) return 'rate-limiting-abuse';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
   if (normalized.includes('synthetic monitoring') || normalized.includes('synthetic-monitoring') || normalized.includes('canary monitor')) return 'synthetic-monitoring';
   if (normalized.includes('health check') || normalized.includes('health-check') || normalized.includes('readiness probe') || normalized.includes('liveness probe') || normalized.includes('synthetic check')) return 'health-check';
@@ -1725,6 +1736,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('sandbox-escape-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture container-breakout, namespace-escape, and isolation-bypass dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'iam-misconfiguration') {
+    addAssumption(assumptions, 'Iam-misconfiguration behavior is inferred from scenario wording and dependency surface, not measured overly-permissive-role, wildcard-policy, or access-grant telemetry.');
+  }
+
+  if (scenarioKind === 'iam-misconfiguration' && input.dependencyCount > 50) {
+    signals.push('iam-misconfiguration-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture overly-permissive-role, wildcard-policy, and access-grant dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'cross-account-access') {
+    addAssumption(assumptions, 'Cross-account-access behavior is inferred from scenario wording and dependency surface, not measured external-account, trust-boundary, or assume-role telemetry.');
+  }
+
+  if (scenarioKind === 'cross-account-access' && input.dependencyCount > 50) {
+    signals.push('cross-account-access-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture external-account, trust-boundary, and assume-role dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'service-mesh-policy') {
+    addAssumption(assumptions, 'Service-mesh-policy behavior is inferred from scenario wording and dependency surface, not measured sidecar-mTLS, traffic-policy, or mesh-enforcement telemetry.');
+  }
+
+  if (scenarioKind === 'service-mesh-policy' && input.dependencyCount > 50) {
+    signals.push('service-mesh-policy-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture sidecar-mTLS, traffic-policy, and mesh-enforcement dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'api-gateway-security') {
+    addAssumption(assumptions, 'Api-gateway-security behavior is inferred from scenario wording and dependency surface, not measured gateway-auth-layer, request-validation, or rate-control telemetry.');
+  }
+
+  if (scenarioKind === 'api-gateway-security' && input.dependencyCount > 50) {
+    signals.push('api-gateway-security-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture gateway-auth-layer, request-validation, and rate-control dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'rate-limiting-abuse') {
+    addAssumption(assumptions, 'Rate-limiting-abuse behavior is inferred from scenario wording and dependency surface, not measured bypass-throttling, excessive-requests, or evasion telemetry.');
+  }
+
+  if (scenarioKind === 'rate-limiting-abuse' && input.dependencyCount > 50) {
+    signals.push('rate-limiting-abuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture bypass-throttling, excessive-requests, and evasion dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
