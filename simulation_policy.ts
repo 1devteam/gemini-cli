@@ -123,6 +123,11 @@ export type SimulationScenarioKind =
   | 'tls-downgrade'
   | 'oauth-misuse'
   | 'webhook-signature-bypass'
+  | 'mfa-bypass'
+  | 'session-fixation'
+  | 'jwt-claim-tampering'
+  | 'refresh-token-reuse'
+  | 'account-enumeration'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -223,6 +228,8 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('dead letter queue') || normalized.includes('dead-letter-queue') || normalized.includes('dlq') || normalized.includes('poison message') || normalized.includes('retry exhausted')) return 'dead-letter-queue';
   if (normalized.includes('retry') || normalized.includes('storm')) return 'retry';
   if (normalized.includes('cold-start') || normalized.includes('cold start') || normalized.includes('startup')) return 'cold-start';
+  if (normalized.includes('session fixation') || normalized.includes('session-fixation') || normalized.includes('preset session id') || normalized.includes('cookie reuse') || normalized.includes('login binding')) return 'session-fixation';
+  if (normalized.includes('refresh token reuse') || normalized.includes('refresh-token-reuse') || normalized.includes('stolen refresh token') || normalized.includes('token replay') || normalized.includes('rotation failure')) return 'refresh-token-reuse';
   if (normalized.includes('session revocation') || normalized.includes('session-revocation') || normalized.includes('revoked session') || normalized.includes('logout') || normalized.includes('token invalidation')) return 'session-revocation';
   if (normalized.includes('cdn cache poisoning') || normalized.includes('cdn-cache-poisoning') || normalized.includes('cache key confusion') || normalized.includes('poisoned edge response') || normalized.includes('header variation')) return 'cdn-cache-poisoning';
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
@@ -265,6 +272,9 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('sandbox escape') || normalized.includes('sandbox-escape') || normalized.includes('container breakout') || normalized.includes('namespace escape') || normalized.includes('isolation bypass')) return 'sandbox-escape';
   if (normalized.includes('iam misconfiguration') || normalized.includes('iam-misconfiguration') || normalized.includes('overly permissive role') || normalized.includes('wildcard policy') || normalized.includes('access grant')) return 'iam-misconfiguration';
   if (normalized.includes('cross account access') || normalized.includes('cross-account-access') || normalized.includes('external account') || normalized.includes('trust boundary') || normalized.includes('assume role')) return 'cross-account-access';
+  if (normalized.includes('mfa bypass') || normalized.includes('mfa-bypass') || normalized.includes('push fatigue') || normalized.includes('one time code interception') || normalized.includes('second factor downgrade')) return 'mfa-bypass';
+  if (normalized.includes('jwt claim tampering') || normalized.includes('jwt-claim-tampering') || normalized.includes('unsigned token') || normalized.includes('altered audience') || normalized.includes('modified issuer') || normalized.includes('privilege claim')) return 'jwt-claim-tampering';
+  if (normalized.includes('account enumeration') || normalized.includes('account-enumeration') || normalized.includes('username probing') || normalized.includes('login error oracle') || normalized.includes('email discovery')) return 'account-enumeration';
   if (normalized.includes('api gateway security') || normalized.includes('api-gateway-security') || normalized.includes('gateway auth layer') || normalized.includes('request validation') || normalized.includes('gateway security')) return 'api-gateway-security';
   if (normalized.includes('rate limiting abuse') || normalized.includes('rate-limiting-abuse') || normalized.includes('excessive requests') || normalized.includes('throttling abuse') || normalized.includes('rate control abuse')) return 'rate-limiting-abuse';
   if (normalized.includes('oauth misuse') || normalized.includes('oauth-misuse') || normalized.includes('redirect uri abuse') || normalized.includes('weak scope') || normalized.includes('consent flow')) return 'oauth-misuse';
@@ -1846,6 +1856,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('webhook-signature-bypass-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture missing-HMAC-verification, replayed-webhook, and unsigned-payload dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'mfa-bypass') {
+    addAssumption(assumptions, 'Mfa-bypass behavior is inferred from scenario wording and dependency surface, not measured push-fatigue, one-time-code-interception, or second-factor-downgrade telemetry.');
+  }
+
+  if (scenarioKind === 'mfa-bypass' && input.dependencyCount > 50) {
+    signals.push('mfa-bypass-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture push-fatigue, one-time-code-interception, and second-factor-downgrade dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'session-fixation') {
+    addAssumption(assumptions, 'Session-fixation behavior is inferred from scenario wording and dependency surface, not measured preset-session-id, cookie-reuse, or login-binding telemetry.');
+  }
+
+  if (scenarioKind === 'session-fixation' && input.dependencyCount > 50) {
+    signals.push('session-fixation-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture preset-session-id, cookie-reuse, and login-binding dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'jwt-claim-tampering') {
+    addAssumption(assumptions, 'Jwt-claim-tampering behavior is inferred from scenario wording and dependency surface, not measured unsigned-token, altered-audience, or modified-issuer telemetry.');
+  }
+
+  if (scenarioKind === 'jwt-claim-tampering' && input.dependencyCount > 50) {
+    signals.push('jwt-claim-tampering-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture unsigned-token, altered-audience, and modified-issuer dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'refresh-token-reuse') {
+    addAssumption(assumptions, 'Refresh-token-reuse behavior is inferred from scenario wording and dependency surface, not measured stolen-refresh-token, token-replay, or rotation-failure telemetry.');
+  }
+
+  if (scenarioKind === 'refresh-token-reuse' && input.dependencyCount > 50) {
+    signals.push('refresh-token-reuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture stolen-refresh-token, token-replay, and rotation-failure dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'account-enumeration') {
+    addAssumption(assumptions, 'Account-enumeration behavior is inferred from scenario wording and dependency surface, not measured username-probing, login-error-oracle, or email-discovery telemetry.');
+  }
+
+  if (scenarioKind === 'account-enumeration' && input.dependencyCount > 50) {
+    signals.push('account-enumeration-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture username-probing, login-error-oracle, and email-discovery dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
