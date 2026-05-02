@@ -133,6 +133,11 @@ export type SimulationScenarioKind =
   | 'data-retention-violation'
   | 'backup-exposure'
   | 'analytics-tracking-abuse'
+  | 'credential-stuffing'
+  | 'bot-scraping'
+  | 'payment-fraud'
+  | 'promo-abuse'
+  | 'inventory-hoarding'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -274,6 +279,10 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('log secret exposure') || normalized.includes('log-secret-exposure') || normalized.includes('api key in logs') || normalized.includes('credential dump') || normalized.includes('token logged')) return 'log-secret-exposure';
   if (normalized.includes('pii leakage') || normalized.includes('pii-leakage') || normalized.includes('personal data exposure') || normalized.includes('sensitive field disclosure') || normalized.includes('customer identifier')) return 'pii-leakage';
   if (normalized.includes('data retention violation') || normalized.includes('data-retention-violation') || normalized.includes('expired records') || normalized.includes('deletion failure') || normalized.includes('retention policy breach') || normalized.includes('archive overrun')) return 'data-retention-violation';
+  if (normalized.includes('bot scraping') || normalized.includes('bot-scraping') || normalized.includes('automated scraper') || normalized.includes('headless browser') || normalized.includes('content harvesting') || normalized.includes('crawl abuse')) return 'bot-scraping';
+  if (normalized.includes('payment fraud') || normalized.includes('payment-fraud') || normalized.includes('stolen card') || normalized.includes('chargeback abuse') || normalized.includes('card testing') || normalized.includes('transaction fraud')) return 'payment-fraud';
+  if (normalized.includes('promo abuse') || normalized.includes('promo-abuse') || normalized.includes('coupon stacking') || normalized.includes('referral abuse') || normalized.includes('discount exploit') || normalized.includes('free trial farming')) return 'promo-abuse';
+  if (normalized.includes('inventory hoarding') || normalized.includes('inventory-hoarding') || normalized.includes('cart stuffing') || normalized.includes('stock reservation abuse') || normalized.includes('checkout bot') || normalized.includes('scarcity')) return 'inventory-hoarding';
   if (normalized.includes('analytics tracking abuse') || normalized.includes('analytics-tracking-abuse') || normalized.includes('consent bypass') || normalized.includes('excessive tracking') || normalized.includes('user fingerprint') || normalized.includes('third party pixel')) return 'analytics-tracking-abuse';
   if (normalized.includes('runtime detection') || normalized.includes('runtime-detection') || normalized.includes('anomaly detection') || normalized.includes('behavior monitoring') || normalized.includes('intrusion detection')) return 'runtime-detection';
   if (normalized.includes('pod security') || normalized.includes('pod-security') || normalized.includes('restricted pod') || normalized.includes('pod security standard') || normalized.includes('run as non root')) return 'pod-security';
@@ -282,6 +291,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('sandbox escape') || normalized.includes('sandbox-escape') || normalized.includes('container breakout') || normalized.includes('namespace escape') || normalized.includes('isolation bypass')) return 'sandbox-escape';
   if (normalized.includes('iam misconfiguration') || normalized.includes('iam-misconfiguration') || normalized.includes('overly permissive role') || normalized.includes('wildcard policy') || normalized.includes('access grant')) return 'iam-misconfiguration';
   if (normalized.includes('cross account access') || normalized.includes('cross-account-access') || normalized.includes('external account') || normalized.includes('trust boundary') || normalized.includes('assume role')) return 'cross-account-access';
+  if (normalized.includes('credential stuffing') || normalized.includes('credential-stuffing') || normalized.includes('reused password') || normalized.includes('login spray') || normalized.includes('breached credential') || normalized.includes('automated login')) return 'credential-stuffing';
   if (normalized.includes('mfa bypass') || normalized.includes('mfa-bypass') || normalized.includes('push fatigue') || normalized.includes('one time code interception') || normalized.includes('second factor downgrade')) return 'mfa-bypass';
   if (normalized.includes('jwt claim tampering') || normalized.includes('jwt-claim-tampering') || normalized.includes('unsigned token') || normalized.includes('altered audience') || normalized.includes('modified issuer') || normalized.includes('privilege claim')) return 'jwt-claim-tampering';
   if (normalized.includes('account enumeration') || normalized.includes('account-enumeration') || normalized.includes('username probing') || normalized.includes('login error oracle') || normalized.includes('email discovery')) return 'account-enumeration';
@@ -1966,6 +1976,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('analytics-tracking-abuse-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture consent-bypass, excessive-tracking, and user-fingerprint dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'credential-stuffing') {
+    addAssumption(assumptions, 'Credential-stuffing behavior is inferred from scenario wording and dependency surface, not measured reused-password, login-spray, or breached-credential telemetry.');
+  }
+
+  if (scenarioKind === 'credential-stuffing' && input.dependencyCount > 50) {
+    signals.push('credential-stuffing-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture reused-password, login-spray, and breached-credential dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'bot-scraping') {
+    addAssumption(assumptions, 'Bot-scraping behavior is inferred from scenario wording and dependency surface, not measured automated-scraper, headless-browser, or content-harvesting telemetry.');
+  }
+
+  if (scenarioKind === 'bot-scraping' && input.dependencyCount > 50) {
+    signals.push('bot-scraping-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture automated-scraper, headless-browser, and content-harvesting dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'payment-fraud') {
+    addAssumption(assumptions, 'Payment-fraud behavior is inferred from scenario wording and dependency surface, not measured stolen-card, chargeback-abuse, or card-testing telemetry.');
+  }
+
+  if (scenarioKind === 'payment-fraud' && input.dependencyCount > 50) {
+    signals.push('payment-fraud-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture stolen-card, chargeback-abuse, and card-testing dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'promo-abuse') {
+    addAssumption(assumptions, 'Promo-abuse behavior is inferred from scenario wording and dependency surface, not measured coupon-stacking, referral-abuse, or discount-exploit telemetry.');
+  }
+
+  if (scenarioKind === 'promo-abuse' && input.dependencyCount > 50) {
+    signals.push('promo-abuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture coupon-stacking, referral-abuse, and discount-exploit dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'inventory-hoarding') {
+    addAssumption(assumptions, 'Inventory-hoarding behavior is inferred from scenario wording and dependency surface, not measured cart-stuffing, stock-reservation-abuse, or checkout-bot telemetry.');
+  }
+
+  if (scenarioKind === 'inventory-hoarding' && input.dependencyCount > 50) {
+    signals.push('inventory-hoarding-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture cart-stuffing, stock-reservation-abuse, and checkout-bot dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
