@@ -118,6 +118,11 @@ export type SimulationScenarioKind =
   | 'service-mesh-policy'
   | 'api-gateway-security'
   | 'rate-limiting-abuse'
+  | 'dns-misconfiguration'
+  | 'cdn-cache-poisoning'
+  | 'tls-downgrade'
+  | 'oauth-misuse'
+  | 'webhook-signature-bypass'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -219,15 +224,18 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('retry') || normalized.includes('storm')) return 'retry';
   if (normalized.includes('cold-start') || normalized.includes('cold start') || normalized.includes('startup')) return 'cold-start';
   if (normalized.includes('session revocation') || normalized.includes('session-revocation') || normalized.includes('revoked session') || normalized.includes('logout') || normalized.includes('token invalidation')) return 'session-revocation';
+  if (normalized.includes('cdn cache poisoning') || normalized.includes('cdn-cache-poisoning') || normalized.includes('cache key confusion') || normalized.includes('poisoned edge response') || normalized.includes('header variation')) return 'cdn-cache-poisoning';
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
   if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
   if (normalized.includes('saga') || normalized.includes('compensation') || normalized.includes('compensating transaction') || normalized.includes('transaction orchestration')) return 'saga';
   if (normalized.includes('outbox') || normalized.includes('transactional outbox') || normalized.includes('event relay') || normalized.includes('message dispatch')) return 'outbox';
+  if (normalized.includes('dns misconfiguration') || normalized.includes('dns-misconfiguration') || normalized.includes('stale record') || normalized.includes('wrong cname') || normalized.includes('zone drift')) return 'dns-misconfiguration';
   if (normalized.includes('network policy') || normalized.includes('network-policy') || normalized.includes('namespace isolation') || normalized.includes('ingress egress') || normalized.includes('deny traffic')) return 'network-policy';
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
+  if (normalized.includes('tls downgrade') || normalized.includes('tls-downgrade') || normalized.includes('weak cipher') || normalized.includes('protocol fallback') || normalized.includes('old tls version')) return 'tls-downgrade';
   if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
   if (normalized.includes('token expiry') || normalized.includes('token-expiry') || normalized.includes('expired token') || normalized.includes('refresh token') || normalized.includes('session renewal')) return 'token-expiry';
   if (normalized.includes('key compromise') || normalized.includes('key-compromise') || normalized.includes('compromised key') || normalized.includes('credential leak') || normalized.includes('key revoke')) return 'key-compromise';
@@ -259,6 +267,8 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('cross account access') || normalized.includes('cross-account-access') || normalized.includes('external account') || normalized.includes('trust boundary') || normalized.includes('assume role')) return 'cross-account-access';
   if (normalized.includes('api gateway security') || normalized.includes('api-gateway-security') || normalized.includes('gateway auth layer') || normalized.includes('request validation') || normalized.includes('gateway security')) return 'api-gateway-security';
   if (normalized.includes('rate limiting abuse') || normalized.includes('rate-limiting-abuse') || normalized.includes('excessive requests') || normalized.includes('throttling abuse') || normalized.includes('rate control abuse')) return 'rate-limiting-abuse';
+  if (normalized.includes('oauth misuse') || normalized.includes('oauth-misuse') || normalized.includes('redirect uri abuse') || normalized.includes('weak scope') || normalized.includes('consent flow')) return 'oauth-misuse';
+  if (normalized.includes('webhook signature bypass') || normalized.includes('webhook-signature-bypass') || normalized.includes('missing hmac verification') || normalized.includes('replayed webhook') || normalized.includes('unsigned payload')) return 'webhook-signature-bypass';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
@@ -1786,6 +1796,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('rate-limiting-abuse-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture bypass-throttling, excessive-requests, and evasion dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'dns-misconfiguration') {
+    addAssumption(assumptions, 'Dns-misconfiguration behavior is inferred from scenario wording and dependency surface, not measured stale-record, wrong-CNAME, or zone-drift telemetry.');
+  }
+
+  if (scenarioKind === 'dns-misconfiguration' && input.dependencyCount > 50) {
+    signals.push('dns-misconfiguration-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture stale-record, wrong-CNAME, and zone-drift dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'cdn-cache-poisoning') {
+    addAssumption(assumptions, 'Cdn-cache-poisoning behavior is inferred from scenario wording and dependency surface, not measured cache-key-confusion, poisoned-edge-response, or header-variation telemetry.');
+  }
+
+  if (scenarioKind === 'cdn-cache-poisoning' && input.dependencyCount > 50) {
+    signals.push('cdn-cache-poisoning-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture cache-key-confusion, poisoned-edge-response, and header-variation dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'tls-downgrade') {
+    addAssumption(assumptions, 'Tls-downgrade behavior is inferred from scenario wording and dependency surface, not measured weak-cipher, protocol-fallback, or old-TLS-version telemetry.');
+  }
+
+  if (scenarioKind === 'tls-downgrade' && input.dependencyCount > 50) {
+    signals.push('tls-downgrade-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture weak-cipher, protocol-fallback, and old-TLS-version dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'oauth-misuse') {
+    addAssumption(assumptions, 'Oauth-misuse behavior is inferred from scenario wording and dependency surface, not measured redirect-URI-abuse, weak-scope, or consent-flow telemetry.');
+  }
+
+  if (scenarioKind === 'oauth-misuse' && input.dependencyCount > 50) {
+    signals.push('oauth-misuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture redirect-URI-abuse, weak-scope, and consent-flow dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'webhook-signature-bypass') {
+    addAssumption(assumptions, 'Webhook-signature-bypass behavior is inferred from scenario wording and dependency surface, not measured missing-HMAC-verification, replayed-webhook, or unsigned-payload telemetry.');
+  }
+
+  if (scenarioKind === 'webhook-signature-bypass' && input.dependencyCount > 50) {
+    signals.push('webhook-signature-bypass-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture missing-HMAC-verification, replayed-webhook, and unsigned-payload dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
