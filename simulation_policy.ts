@@ -108,6 +108,11 @@ export type SimulationScenarioKind =
   | 'policy-as-code'
   | 'admission-control'
   | 'runtime-detection'
+  | 'pod-security'
+  | 'network-policy'
+  | 'secrets-mount'
+  | 'privilege-escalation'
+  | 'sandbox-escape'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -214,6 +219,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
   if (normalized.includes('saga') || normalized.includes('compensation') || normalized.includes('compensating transaction') || normalized.includes('transaction orchestration')) return 'saga';
   if (normalized.includes('outbox') || normalized.includes('transactional outbox') || normalized.includes('event relay') || normalized.includes('message dispatch')) return 'outbox';
+  if (normalized.includes('network policy') || normalized.includes('network-policy') || normalized.includes('namespace isolation') || normalized.includes('ingress egress') || normalized.includes('deny traffic')) return 'network-policy';
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
@@ -239,6 +245,10 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection')) return 'load-shedding';
   if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
   if (normalized.includes('runtime detection') || normalized.includes('runtime-detection') || normalized.includes('anomaly detection') || normalized.includes('behavior monitoring') || normalized.includes('intrusion detection')) return 'runtime-detection';
+  if (normalized.includes('pod security') || normalized.includes('pod-security') || normalized.includes('restricted pod') || normalized.includes('pod security standard') || normalized.includes('run as non root')) return 'pod-security';
+  if (normalized.includes('secrets mount') || normalized.includes('secrets-mount') || normalized.includes('secret volume') || normalized.includes('projected secret') || normalized.includes('secret file permission')) return 'secrets-mount';
+  if (normalized.includes('privilege escalation') || normalized.includes('privilege-escalation') || normalized.includes('escalated privilege') || normalized.includes('root capability') || normalized.includes('setuid')) return 'privilege-escalation';
+  if (normalized.includes('sandbox escape') || normalized.includes('sandbox-escape') || normalized.includes('container breakout') || normalized.includes('namespace escape') || normalized.includes('isolation bypass')) return 'sandbox-escape';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
@@ -756,6 +766,26 @@ function buildNextActions(decision: SimulationDecision, signals: string[]): stri
 
     if (signals.includes('runtime-detection-dependency-pressure')) {
       nextActions.push('Capture runtime-detection baseline and anomaly-detection metrics before execution.');
+    }
+
+    if (signals.includes('pod-security-dependency-pressure')) {
+      nextActions.push('Capture pod-security baseline and restricted-pod metrics before execution.');
+    }
+
+    if (signals.includes('network-policy-dependency-pressure')) {
+      nextActions.push('Capture network-policy baseline and namespace-isolation metrics before execution.');
+    }
+
+    if (signals.includes('secrets-mount-dependency-pressure')) {
+      nextActions.push('Capture secrets-mount baseline and secret-volume metrics before execution.');
+    }
+
+    if (signals.includes('privilege-escalation-dependency-pressure')) {
+      nextActions.push('Capture privilege-escalation baseline and root-capability metrics before execution.');
+    }
+
+    if (signals.includes('sandbox-escape-dependency-pressure')) {
+      nextActions.push('Capture sandbox-escape baseline and container-breakout metrics before execution.');
     }
 
     return nextActions;
@@ -1645,6 +1675,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('runtime-detection-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture anomaly-detection, behavior-monitoring, and intrusion-detection dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'pod-security') {
+    addAssumption(assumptions, 'Pod-security behavior is inferred from scenario wording and dependency surface, not measured restricted-pod, pod-security-standard, or run-as-non-root telemetry.');
+  }
+
+  if (scenarioKind === 'pod-security' && input.dependencyCount > 50) {
+    signals.push('pod-security-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture restricted-pod, pod-security-standard, and run-as-non-root dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'network-policy') {
+    addAssumption(assumptions, 'Network-policy behavior is inferred from scenario wording and dependency surface, not measured namespace-isolation, ingress-egress, or deny-traffic telemetry.');
+  }
+
+  if (scenarioKind === 'network-policy' && input.dependencyCount > 50) {
+    signals.push('network-policy-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture namespace-isolation, ingress-egress, and deny-traffic dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'secrets-mount') {
+    addAssumption(assumptions, 'Secrets-mount behavior is inferred from scenario wording and dependency surface, not measured secret-volume, projected-secret, or secret-file-permission telemetry.');
+  }
+
+  if (scenarioKind === 'secrets-mount' && input.dependencyCount > 50) {
+    signals.push('secrets-mount-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture secret-volume, projected-secret, and secret-file-permission dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'privilege-escalation') {
+    addAssumption(assumptions, 'Privilege-escalation behavior is inferred from scenario wording and dependency surface, not measured escalated-privilege, root-capability, or setuid telemetry.');
+  }
+
+  if (scenarioKind === 'privilege-escalation' && input.dependencyCount > 50) {
+    signals.push('privilege-escalation-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture escalated-privilege, root-capability, and setuid dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'sandbox-escape') {
+    addAssumption(assumptions, 'Sandbox-escape behavior is inferred from scenario wording and dependency surface, not measured container-breakout, namespace-escape, or isolation-bypass telemetry.');
+  }
+
+  if (scenarioKind === 'sandbox-escape' && input.dependencyCount > 50) {
+    signals.push('sandbox-escape-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture container-breakout, namespace-escape, and isolation-bypass dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
