@@ -128,6 +128,11 @@ export type SimulationScenarioKind =
   | 'jwt-claim-tampering'
   | 'refresh-token-reuse'
   | 'account-enumeration'
+  | 'pii-leakage'
+  | 'log-secret-exposure'
+  | 'data-retention-violation'
+  | 'backup-exposure'
+  | 'analytics-tracking-abuse'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -241,6 +246,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('network policy') || normalized.includes('network-policy') || normalized.includes('namespace isolation') || normalized.includes('ingress egress') || normalized.includes('deny traffic')) return 'network-policy';
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
+  if (normalized.includes('backup exposure') || normalized.includes('backup-exposure') || normalized.includes('public snapshot') || normalized.includes('unsecured backup') || normalized.includes('open archive') || normalized.includes('restore leak')) return 'backup-exposure';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('tls downgrade') || normalized.includes('tls-downgrade') || normalized.includes('weak cipher') || normalized.includes('protocol fallback') || normalized.includes('old tls version')) return 'tls-downgrade';
   if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
@@ -265,6 +271,10 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection')) return 'load-shedding';
   if (normalized.includes('service mesh policy') || normalized.includes('service-mesh-policy') || normalized.includes('sidecar mtls') || normalized.includes('traffic policy') || normalized.includes('mesh enforcement')) return 'service-mesh-policy';
   if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
+  if (normalized.includes('log secret exposure') || normalized.includes('log-secret-exposure') || normalized.includes('api key in logs') || normalized.includes('credential dump') || normalized.includes('token logged')) return 'log-secret-exposure';
+  if (normalized.includes('pii leakage') || normalized.includes('pii-leakage') || normalized.includes('personal data exposure') || normalized.includes('sensitive field disclosure') || normalized.includes('customer identifier')) return 'pii-leakage';
+  if (normalized.includes('data retention violation') || normalized.includes('data-retention-violation') || normalized.includes('expired records') || normalized.includes('deletion failure') || normalized.includes('retention policy breach') || normalized.includes('archive overrun')) return 'data-retention-violation';
+  if (normalized.includes('analytics tracking abuse') || normalized.includes('analytics-tracking-abuse') || normalized.includes('consent bypass') || normalized.includes('excessive tracking') || normalized.includes('user fingerprint') || normalized.includes('third party pixel')) return 'analytics-tracking-abuse';
   if (normalized.includes('runtime detection') || normalized.includes('runtime-detection') || normalized.includes('anomaly detection') || normalized.includes('behavior monitoring') || normalized.includes('intrusion detection')) return 'runtime-detection';
   if (normalized.includes('pod security') || normalized.includes('pod-security') || normalized.includes('restricted pod') || normalized.includes('pod security standard') || normalized.includes('run as non root')) return 'pod-security';
   if (normalized.includes('secrets mount') || normalized.includes('secrets-mount') || normalized.includes('secret volume') || normalized.includes('projected secret') || normalized.includes('secret file permission')) return 'secrets-mount';
@@ -1906,6 +1916,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('account-enumeration-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture username-probing, login-error-oracle, and email-discovery dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'pii-leakage') {
+    addAssumption(assumptions, 'Pii-leakage behavior is inferred from scenario wording and dependency surface, not measured personal-data-exposure, sensitive-field-disclosure, or customer-identifier telemetry.');
+  }
+
+  if (scenarioKind === 'pii-leakage' && input.dependencyCount > 50) {
+    signals.push('pii-leakage-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture personal-data-exposure, sensitive-field-disclosure, and customer-identifier dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'log-secret-exposure') {
+    addAssumption(assumptions, 'Log-secret-exposure behavior is inferred from scenario wording and dependency surface, not measured api-key-in-logs, credential-dump, or token-logged telemetry.');
+  }
+
+  if (scenarioKind === 'log-secret-exposure' && input.dependencyCount > 50) {
+    signals.push('log-secret-exposure-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture api-key-in-logs, credential-dump, and token-logged dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'data-retention-violation') {
+    addAssumption(assumptions, 'Data-retention-violation behavior is inferred from scenario wording and dependency surface, not measured expired-records, deletion-failure, or retention-policy-breach telemetry.');
+  }
+
+  if (scenarioKind === 'data-retention-violation' && input.dependencyCount > 50) {
+    signals.push('data-retention-violation-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture expired-records, deletion-failure, and retention-policy-breach dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'backup-exposure') {
+    addAssumption(assumptions, 'Backup-exposure behavior is inferred from scenario wording and dependency surface, not measured public-snapshot, unsecured-backup, or open-archive telemetry.');
+  }
+
+  if (scenarioKind === 'backup-exposure' && input.dependencyCount > 50) {
+    signals.push('backup-exposure-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture public-snapshot, unsecured-backup, and open-archive dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'analytics-tracking-abuse') {
+    addAssumption(assumptions, 'Analytics-tracking-abuse behavior is inferred from scenario wording and dependency surface, not measured consent-bypass, excessive-tracking, or user-fingerprint telemetry.');
+  }
+
+  if (scenarioKind === 'analytics-tracking-abuse' && input.dependencyCount > 50) {
+    signals.push('analytics-tracking-abuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture consent-bypass, excessive-tracking, and user-fingerprint dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
