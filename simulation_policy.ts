@@ -372,6 +372,70 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'control-plane-throttling',
     keywords: ['control plane throttling', 'control-plane-throttling', 'api control plane throttle', 'management api saturation', 'request limit'],
   },
+  {
+    kind: 'message-replay',
+    keywords: ['message replay', 'message-replay', 'duplicate message', 'replayed event', 'old offset', 'redelivered payload'],
+  },
+  {
+    kind: 'event-ordering-drift',
+    keywords: ['event ordering drift', 'event-ordering-drift', 'out of order event', 'sequence gap', 'partition reorder'],
+  },
+  {
+    kind: 'consumer-lag-abuse',
+    keywords: ['consumer lag abuse', 'consumer-lag-abuse', 'stalled consumer', 'offset lag', 'backlog growth', 'slow subscriber'],
+  },
+  {
+    kind: 'poison-event',
+    keywords: ['poison event', 'poison-event', 'malformed event', 'toxic payload', 'handler crash', 'stream quarantine'],
+  },
+  {
+    kind: 'schema-poisoning',
+    keywords: ['schema poisoning', 'schema-poisoning', 'malicious schema evolution', 'incompatible event schema', 'schema registry pollution'],
+  },
+  {
+    kind: 'topic-permission-bypass',
+    keywords: ['topic permission bypass', 'topic-permission-bypass', 'unauthorized publish', 'topic acl skipped', 'broker permission'],
+  },
+  {
+    kind: 'dead-letter-flood',
+    keywords: ['dead letter flood', 'dead-letter-flood', 'dlq flood', 'failed event surge', 'poison backlog', 'dead letter queue pressure'],
+  },
+  {
+    kind: 'event-duplication',
+    keywords: ['event duplication', 'event-duplication', 'duplicate event', 'repeated emit', 'producer retry', 'duplicate delivery'],
+  },
+  {
+    kind: 'double-spend',
+    keywords: ['double spend', 'double-spend', 'duplicate debit', 'repeated payment', 'balance reuse'],
+  },
+  {
+    kind: 'race-condition',
+    keywords: ['race condition', 'race-condition', 'concurrent update', 'timing window', 'check then act', 'shared state conflict'],
+  },
+  {
+    kind: 'lost-update',
+    keywords: ['lost update', 'lost-update', 'overwrite concurrent write', 'stale version', 'missing compare and swap'],
+  },
+  {
+    kind: 'stale-read',
+    keywords: ['stale read', 'stale-read', 'replica lag', 'outdated read', 'read after write inconsistency'],
+  },
+  {
+    kind: 'write-skew',
+    keywords: ['write skew', 'write-skew', 'snapshot isolation', 'invariant violation', 'concurrent transaction', 'constraint bypass'],
+  },
+  {
+    kind: 'replay-transaction',
+    keywords: ['replay transaction', 'replay-transaction', 'duplicate request', 'nonce reuse', 'idempotency failure', 'repeated transaction'],
+  },
+  {
+    kind: 'partial-commit',
+    keywords: ['partial commit', 'partial-commit', 'half written transaction', 'atomicity failure', 'incomplete commit', 'inconsistent state'],
+  },
+  {
+    kind: 'ledger-tampering',
+    keywords: ['ledger tampering', 'ledger-tampering', 'audit ledger mutation', 'balance history altered', 'transaction log rewrite'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -386,22 +450,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   const registryMatch = matchScenarioClassifierRule(normalized);
   if (registryMatch) return registryMatch;
 
-  if (normalized.includes('message replay') || normalized.includes('message-replay') || normalized.includes('duplicate message') || normalized.includes('replayed event') || normalized.includes('old offset') || normalized.includes('redelivered payload')) return 'message-replay';
-  if (normalized.includes('event ordering drift') || normalized.includes('event-ordering-drift') || normalized.includes('out of order event') || normalized.includes('sequence gap') || normalized.includes('partition reorder')) return 'event-ordering-drift';
-  if (normalized.includes('consumer lag abuse') || normalized.includes('consumer-lag-abuse') || normalized.includes('stalled consumer') || normalized.includes('offset lag') || normalized.includes('backlog growth') || normalized.includes('slow subscriber')) return 'consumer-lag-abuse';
-  if (normalized.includes('poison event') || normalized.includes('poison-event') || normalized.includes('malformed event') || normalized.includes('toxic payload') || normalized.includes('handler crash') || normalized.includes('stream quarantine')) return 'poison-event';
-  if (normalized.includes('schema poisoning') || normalized.includes('schema-poisoning') || normalized.includes('malicious schema evolution') || normalized.includes('incompatible event schema') || normalized.includes('schema registry pollution')) return 'schema-poisoning';
-  if (normalized.includes('topic permission bypass') || normalized.includes('topic-permission-bypass') || normalized.includes('unauthorized publish') || normalized.includes('topic acl skipped') || normalized.includes('broker permission')) return 'topic-permission-bypass';
-  if (normalized.includes('dead letter flood') || normalized.includes('dead-letter-flood') || normalized.includes('dlq flood') || normalized.includes('failed event surge') || normalized.includes('poison backlog') || normalized.includes('dead letter queue pressure')) return 'dead-letter-flood';
-  if (normalized.includes('event duplication') || normalized.includes('event-duplication') || normalized.includes('duplicate event') || normalized.includes('repeated emit') || normalized.includes('producer retry') || normalized.includes('duplicate delivery')) return 'event-duplication';
-  if (normalized.includes('double spend') || normalized.includes('double-spend') || normalized.includes('duplicate debit') || normalized.includes('repeated payment') || normalized.includes('balance reuse')) return 'double-spend';
-  if (normalized.includes('race condition') || normalized.includes('race-condition') || normalized.includes('concurrent update') || normalized.includes('timing window') || normalized.includes('check then act') || normalized.includes('shared state conflict')) return 'race-condition';
-  if (normalized.includes('lost update') || normalized.includes('lost-update') || normalized.includes('overwrite concurrent write') || normalized.includes('stale version') || normalized.includes('missing compare and swap')) return 'lost-update';
-  if (normalized.includes('stale read') || normalized.includes('stale-read') || normalized.includes('replica lag') || normalized.includes('outdated read') || normalized.includes('read after write inconsistency')) return 'stale-read';
-  if (normalized.includes('write skew') || normalized.includes('write-skew') || normalized.includes('snapshot isolation') || normalized.includes('invariant violation') || normalized.includes('concurrent transaction') || normalized.includes('constraint bypass')) return 'write-skew';
-  if (normalized.includes('replay transaction') || normalized.includes('replay-transaction') || normalized.includes('duplicate request') || normalized.includes('nonce reuse') || normalized.includes('idempotency failure') || normalized.includes('repeated transaction')) return 'replay-transaction';
-  if (normalized.includes('partial commit') || normalized.includes('partial-commit') || normalized.includes('half written transaction') || normalized.includes('atomicity failure') || normalized.includes('incomplete commit') || normalized.includes('inconsistent state')) return 'partial-commit';
-  if (normalized.includes('ledger tampering') || normalized.includes('ledger-tampering') || normalized.includes('audit ledger mutation') || normalized.includes('balance history altered') || normalized.includes('transaction log rewrite')) return 'ledger-tampering';
   if (normalized.includes('dead letter queue') || normalized.includes('dead-letter-queue') || normalized.includes('dlq') || normalized.includes('poison message') || normalized.includes('retry exhausted')) return 'dead-letter-queue';
   if (normalized.includes('retry') || normalized.includes('storm')) return 'retry';
   if (normalized.includes('cold-start') || normalized.includes('cold start') || normalized.includes('startup')) return 'cold-start';
