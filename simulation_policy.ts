@@ -564,6 +564,66 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'deployment-approval-bypass',
     keywords: ['deployment approval bypass', 'deployment-approval-bypass', 'environment approval skipped', 'manual gate bypass', 'unreviewed production deploy'],
   },
+  {
+    kind: 'resource-exhaustion',
+    keywords: ['resource exhaustion', 'resource-exhaustion', 'memory burn', 'cpu saturation', 'disk fill', 'runaway workload'],
+  },
+  {
+    kind: 'crypto-mining',
+    keywords: ['crypto mining', 'crypto-mining', 'unauthorized miner', 'wallet pool', 'hash workload'],
+  },
+  {
+    kind: 'egress-cost-spike',
+    keywords: ['egress cost spike', 'egress-cost-spike', 'outbound bandwidth', 'data transfer surge'],
+  },
+  {
+    kind: 'orphaned-resource',
+    keywords: ['orphaned resource', 'orphaned-resource', 'unattached volume', 'idle load balancer', 'stale instance', 'leaked allocation'],
+  },
+  {
+    kind: 'quota-drain',
+    keywords: ['quota drain', 'quota-drain', 'api quota exhausted', 'limit depletion', 'quota burn', 'account limit'],
+  },
+  {
+    kind: 'pii-leakage',
+    keywords: ['pii leakage', 'pii-leakage', 'personal data exposure', 'sensitive field disclosure', 'customer identifier'],
+  },
+  {
+    kind: 'log-secret-exposure',
+    keywords: ['log secret exposure', 'log-secret-exposure', 'api key in logs', 'credential dump', 'token logged'],
+  },
+  {
+    kind: 'data-retention-violation',
+    keywords: ['data retention violation', 'data-retention-violation', 'expired records', 'deletion failure', 'retention policy breach', 'archive overrun'],
+  },
+  {
+    kind: 'backup-exposure',
+    keywords: ['backup exposure', 'backup-exposure', 'public snapshot', 'unsecured backup', 'open archive', 'restore leak'],
+  },
+  {
+    kind: 'analytics-tracking-abuse',
+    keywords: ['analytics tracking abuse', 'analytics-tracking-abuse', 'consent bypass', 'excessive tracking', 'user fingerprint', 'third party pixel'],
+  },
+  {
+    kind: 'credential-stuffing',
+    keywords: ['credential stuffing', 'credential-stuffing', 'password spraying', 'breached credential', 'login stuffing', 'account takeover attempt'],
+  },
+  {
+    kind: 'bot-scraping',
+    keywords: ['bot scraping', 'bot-scraping', 'automated scraper', 'headless browser', 'content harvesting', 'crawl abuse'],
+  },
+  {
+    kind: 'payment-fraud',
+    keywords: ['payment fraud', 'payment-fraud', 'stolen card', 'chargeback abuse', 'card testing', 'transaction fraud'],
+  },
+  {
+    kind: 'promo-abuse',
+    keywords: ['promo abuse', 'promo-abuse', 'coupon stacking', 'referral abuse', 'discount exploit', 'free trial farming'],
+  },
+  {
+    kind: 'inventory-hoarding',
+    keywords: ['inventory hoarding', 'inventory-hoarding', 'cart stuffing', 'stock reservation abuse', 'checkout bot', 'scarcity'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -585,20 +645,15 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('refresh token reuse') || normalized.includes('refresh-token-reuse') || normalized.includes('stolen refresh token') || normalized.includes('token replay') || normalized.includes('rotation failure')) return 'refresh-token-reuse';
   if (normalized.includes('session revocation') || normalized.includes('session-revocation') || normalized.includes('revoked session') || normalized.includes('logout') || normalized.includes('token invalidation')) return 'session-revocation';
   if (normalized.includes('cdn cache poisoning') || normalized.includes('cdn-cache-poisoning') || normalized.includes('cache key confusion') || normalized.includes('poisoned edge response') || normalized.includes('header variation')) return 'cdn-cache-poisoning';
-  if (normalized.includes('resource exhaustion') || normalized.includes('resource-exhaustion') || normalized.includes('memory burn') || normalized.includes('cpu saturation') || normalized.includes('disk fill') || normalized.includes('runaway workload')) return 'resource-exhaustion';
-  if (normalized.includes('crypto mining') || normalized.includes('crypto-mining') || normalized.includes('unauthorized miner') || normalized.includes('wallet pool') || normalized.includes('hash workload')) return 'crypto-mining';
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
   if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
   if (normalized.includes('saga') || normalized.includes('compensation') || normalized.includes('compensating transaction') || normalized.includes('transaction orchestration')) return 'saga';
   if (normalized.includes('outbox') || normalized.includes('transactional outbox') || normalized.includes('event relay') || normalized.includes('message dispatch')) return 'outbox';
   if (normalized.includes('dns misconfiguration') || normalized.includes('dns-misconfiguration') || normalized.includes('stale record') || normalized.includes('wrong cname') || normalized.includes('zone drift')) return 'dns-misconfiguration';
-  if (normalized.includes('egress cost spike') || normalized.includes('egress-cost-spike') || normalized.includes('outbound bandwidth') || normalized.includes('data transfer surge')) return 'egress-cost-spike';
   if (normalized.includes('network policy') || normalized.includes('network-policy') || normalized.includes('namespace isolation') || normalized.includes('ingress egress') || normalized.includes('deny traffic')) return 'network-policy';
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
-  if (normalized.includes('orphaned resource') || normalized.includes('orphaned-resource') || normalized.includes('unattached volume') || normalized.includes('idle load balancer') || normalized.includes('stale instance') || normalized.includes('leaked allocation')) return 'orphaned-resource';
-  if (normalized.includes('backup exposure') || normalized.includes('backup-exposure') || normalized.includes('public snapshot') || normalized.includes('unsecured backup') || normalized.includes('open archive') || normalized.includes('restore leak')) return 'backup-exposure';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('tls downgrade') || normalized.includes('tls-downgrade') || normalized.includes('weak cipher') || normalized.includes('protocol fallback') || normalized.includes('old tls version')) return 'tls-downgrade';
   if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
@@ -624,14 +679,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection')) return 'load-shedding';
   if (normalized.includes('service mesh policy') || normalized.includes('service-mesh-policy') || normalized.includes('sidecar mtls') || normalized.includes('traffic policy') || normalized.includes('mesh enforcement')) return 'service-mesh-policy';
   if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
-  if (normalized.includes('log secret exposure') || normalized.includes('log-secret-exposure') || normalized.includes('api key in logs') || normalized.includes('credential dump') || normalized.includes('token logged')) return 'log-secret-exposure';
-  if (normalized.includes('pii leakage') || normalized.includes('pii-leakage') || normalized.includes('personal data exposure') || normalized.includes('sensitive field disclosure') || normalized.includes('customer identifier')) return 'pii-leakage';
-  if (normalized.includes('data retention violation') || normalized.includes('data-retention-violation') || normalized.includes('expired records') || normalized.includes('deletion failure') || normalized.includes('retention policy breach') || normalized.includes('archive overrun')) return 'data-retention-violation';
-  if (normalized.includes('bot scraping') || normalized.includes('bot-scraping') || normalized.includes('automated scraper') || normalized.includes('headless browser') || normalized.includes('content harvesting') || normalized.includes('crawl abuse')) return 'bot-scraping';
-  if (normalized.includes('payment fraud') || normalized.includes('payment-fraud') || normalized.includes('stolen card') || normalized.includes('chargeback abuse') || normalized.includes('card testing') || normalized.includes('transaction fraud')) return 'payment-fraud';
-  if (normalized.includes('promo abuse') || normalized.includes('promo-abuse') || normalized.includes('coupon stacking') || normalized.includes('referral abuse') || normalized.includes('discount exploit') || normalized.includes('free trial farming')) return 'promo-abuse';
-  if (normalized.includes('inventory hoarding') || normalized.includes('inventory-hoarding') || normalized.includes('cart stuffing') || normalized.includes('stock reservation abuse') || normalized.includes('checkout bot') || normalized.includes('scarcity')) return 'inventory-hoarding';
-  if (normalized.includes('analytics tracking abuse') || normalized.includes('analytics-tracking-abuse') || normalized.includes('consent bypass') || normalized.includes('excessive tracking') || normalized.includes('user fingerprint') || normalized.includes('third party pixel')) return 'analytics-tracking-abuse';
   if (normalized.includes('runtime detection') || normalized.includes('runtime-detection') || normalized.includes('anomaly detection') || normalized.includes('behavior monitoring') || normalized.includes('intrusion detection')) return 'runtime-detection';
   if (normalized.includes('pod security') || normalized.includes('pod-security') || normalized.includes('restricted pod') || normalized.includes('pod security standard') || normalized.includes('run as non root')) return 'pod-security';
   if (normalized.includes('secrets mount') || normalized.includes('secrets-mount') || normalized.includes('secret volume') || normalized.includes('projected secret') || normalized.includes('secret file permission')) return 'secrets-mount';
@@ -639,12 +686,10 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('sandbox escape') || normalized.includes('sandbox-escape') || normalized.includes('container breakout') || normalized.includes('namespace escape') || normalized.includes('isolation bypass')) return 'sandbox-escape';
   if (normalized.includes('iam misconfiguration') || normalized.includes('iam-misconfiguration') || normalized.includes('overly permissive role') || normalized.includes('wildcard policy') || normalized.includes('access grant')) return 'iam-misconfiguration';
   if (normalized.includes('cross account access') || normalized.includes('cross-account-access') || normalized.includes('external account') || normalized.includes('trust boundary') || normalized.includes('assume role')) return 'cross-account-access';
-  if (normalized.includes('credential stuffing') || normalized.includes('credential-stuffing') || normalized.includes('reused password') || normalized.includes('login spray') || normalized.includes('breached credential') || normalized.includes('automated login')) return 'credential-stuffing';
   if (normalized.includes('mfa bypass') || normalized.includes('mfa-bypass') || normalized.includes('push fatigue') || normalized.includes('one time code interception') || normalized.includes('second factor downgrade')) return 'mfa-bypass';
   if (normalized.includes('jwt claim tampering') || normalized.includes('jwt-claim-tampering') || normalized.includes('unsigned token') || normalized.includes('altered audience') || normalized.includes('modified issuer') || normalized.includes('privilege claim')) return 'jwt-claim-tampering';
   if (normalized.includes('account enumeration') || normalized.includes('account-enumeration') || normalized.includes('username probing') || normalized.includes('login error oracle') || normalized.includes('email discovery')) return 'account-enumeration';
   if (normalized.includes('api gateway security') || normalized.includes('api-gateway-security') || normalized.includes('gateway auth layer') || normalized.includes('request validation') || normalized.includes('gateway security')) return 'api-gateway-security';
-  if (normalized.includes('quota drain') || normalized.includes('quota-drain') || normalized.includes('api quota exhaustion') || normalized.includes('service limit depletion') || normalized.includes('request budget burn')) return 'quota-drain';
   if (normalized.includes('rate limiting abuse') || normalized.includes('rate-limiting-abuse') || normalized.includes('excessive requests') || normalized.includes('throttling abuse') || normalized.includes('rate control abuse')) return 'rate-limiting-abuse';
   if (normalized.includes('oauth misuse') || normalized.includes('oauth-misuse') || normalized.includes('redirect uri abuse') || normalized.includes('weak scope') || normalized.includes('consent flow')) return 'oauth-misuse';
   if (normalized.includes('webhook signature bypass') || normalized.includes('webhook-signature-bypass') || normalized.includes('missing hmac verification') || normalized.includes('replayed webhook') || normalized.includes('unsigned payload')) return 'webhook-signature-bypass';
