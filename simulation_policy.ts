@@ -153,6 +153,11 @@ export type SimulationScenarioKind =
   | 'malicious-pr'
   | 'codeowner-bypass'
   | 'repo-secret-sprawl'
+  | 'typosquatting-package'
+  | 'dependency-confusion'
+  | 'malicious-postinstall'
+  | 'registry-token-leak'
+  | 'package-publish-takeover'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -299,6 +304,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection')) return 'load-shedding';
   if (normalized.includes('service mesh policy') || normalized.includes('service-mesh-policy') || normalized.includes('sidecar mtls') || normalized.includes('traffic policy') || normalized.includes('mesh enforcement')) return 'service-mesh-policy';
   if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
+  if (normalized.includes('registry token leak') || normalized.includes('registry-token-leak') || normalized.includes('npm token exposed') || normalized.includes('publish credential') || normalized.includes('package registry access')) return 'registry-token-leak';
   if (normalized.includes('repo secret sprawl') || normalized.includes('repo-secret-sprawl') || normalized.includes('committed secret') || normalized.includes('private key checked in') || normalized.includes('credential spread')) return 'repo-secret-sprawl';
   if (normalized.includes('pipeline secret leak') || normalized.includes('pipeline-secret-leak') || normalized.includes('ci secret exposed') || normalized.includes('masked variable printed') || normalized.includes('build log')) return 'pipeline-secret-leak';
   if (normalized.includes('log secret exposure') || normalized.includes('log-secret-exposure') || normalized.includes('api key in logs') || normalized.includes('credential dump') || normalized.includes('token logged')) return 'log-secret-exposure';
@@ -327,6 +333,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('oauth misuse') || normalized.includes('oauth-misuse') || normalized.includes('redirect uri abuse') || normalized.includes('weak scope') || normalized.includes('consent flow')) return 'oauth-misuse';
   if (normalized.includes('webhook signature bypass') || normalized.includes('webhook-signature-bypass') || normalized.includes('missing hmac verification') || normalized.includes('replayed webhook') || normalized.includes('unsigned payload')) return 'webhook-signature-bypass';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
+  if (normalized.includes('package publish takeover') || normalized.includes('package-publish-takeover') || normalized.includes('maintainer account takeover') || normalized.includes('unauthorized release') || normalized.includes('compromised package owner')) return 'package-publish-takeover';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
   if (normalized.includes('rate limit bypass') || normalized.includes('rate-limit-bypass') || normalized.includes('quota bypass') || normalized.includes('throttle evasion') || normalized.includes('limit abuse')) return 'rate-limit-bypass';
@@ -358,6 +365,9 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('idempotency') || normalized.includes('idempotent') || normalized.includes('duplicate replay') || normalized.includes('duplicate request') || normalized.includes('dedupe')) return 'idempotency';
   if (normalized.includes('circuit breaker') || normalized.includes('circuit-breaker') || normalized.includes('open circuit') || normalized.includes('half open') || normalized.includes('trip threshold')) return 'circuit-breaker';
   if (normalized.includes('force push risk') || normalized.includes('force-push-risk') || normalized.includes('rewritten history') || normalized.includes('non fast forward') || normalized.includes('branch overwrite') || normalized.includes('commit loss')) return 'force-push-risk';
+  if (normalized.includes('typosquatting package') || normalized.includes('typosquatting-package') || normalized.includes('misspelled dependency') || normalized.includes('lookalike package') || normalized.includes('malicious registry name')) return 'typosquatting-package';
+  if (normalized.includes('dependency confusion') || normalized.includes('dependency-confusion') || normalized.includes('private package shadowed') || normalized.includes('public registry') || normalized.includes('namespace collision')) return 'dependency-confusion';
+  if (normalized.includes('malicious postinstall') || normalized.includes('malicious-postinstall') || normalized.includes('install script') || normalized.includes('package lifecycle hook') || normalized.includes('credential exfiltration')) return 'malicious-postinstall';
   if (normalized.includes('malicious pr') || normalized.includes('malicious-pr') || normalized.includes('hostile contribution') || normalized.includes('hidden payload') || normalized.includes('review evasion')) return 'malicious-pr';
   if (normalized.includes('deployment approval bypass') || normalized.includes('deployment-approval-bypass') || normalized.includes('skipped reviewer') || normalized.includes('environment protection override') || normalized.includes('manual gate')) return 'deployment-approval-bypass';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
@@ -2206,6 +2216,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('repo-secret-sprawl-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture committed-secret, private-key-checked-in, and credential-spread dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'typosquatting-package') {
+    addAssumption(assumptions, 'Typosquatting-package behavior is inferred from scenario wording and dependency surface, not measured misspelled-dependency, lookalike-package, or malicious-registry-name telemetry.');
+  }
+
+  if (scenarioKind === 'typosquatting-package' && input.dependencyCount > 50) {
+    signals.push('typosquatting-package-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture misspelled-dependency, lookalike-package, and malicious-registry-name dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'dependency-confusion') {
+    addAssumption(assumptions, 'Dependency-confusion behavior is inferred from scenario wording and dependency surface, not measured private-package-shadowed, public-registry, or namespace-collision telemetry.');
+  }
+
+  if (scenarioKind === 'dependency-confusion' && input.dependencyCount > 50) {
+    signals.push('dependency-confusion-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture private-package-shadowed, public-registry, and namespace-collision dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'malicious-postinstall') {
+    addAssumption(assumptions, 'Malicious-postinstall behavior is inferred from scenario wording and dependency surface, not measured install-script, package-lifecycle-hook, or credential-exfiltration telemetry.');
+  }
+
+  if (scenarioKind === 'malicious-postinstall' && input.dependencyCount > 50) {
+    signals.push('malicious-postinstall-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture install-script, package-lifecycle-hook, and credential-exfiltration dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'registry-token-leak') {
+    addAssumption(assumptions, 'Registry-token-leak behavior is inferred from scenario wording and dependency surface, not measured npm-token-exposed, publish-credential, or package-registry-access telemetry.');
+  }
+
+  if (scenarioKind === 'registry-token-leak' && input.dependencyCount > 50) {
+    signals.push('registry-token-leak-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture npm-token-exposed, publish-credential, and package-registry-access dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'package-publish-takeover') {
+    addAssumption(assumptions, 'Package-publish-takeover behavior is inferred from scenario wording and dependency surface, not measured maintainer-account-takeover, unauthorized-release, or compromised-package-owner telemetry.');
+  }
+
+  if (scenarioKind === 'package-publish-takeover' && input.dependencyCount > 50) {
+    signals.push('package-publish-takeover-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture maintainer-account-takeover, unauthorized-release, and compromised-package-owner dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
