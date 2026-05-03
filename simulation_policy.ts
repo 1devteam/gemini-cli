@@ -138,6 +138,11 @@ export type SimulationScenarioKind =
   | 'payment-fraud'
   | 'promo-abuse'
   | 'inventory-hoarding'
+  | 'crypto-mining'
+  | 'resource-exhaustion'
+  | 'egress-cost-spike'
+  | 'orphaned-resource'
+  | 'quota-drain'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -242,15 +247,19 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('refresh token reuse') || normalized.includes('refresh-token-reuse') || normalized.includes('stolen refresh token') || normalized.includes('token replay') || normalized.includes('rotation failure')) return 'refresh-token-reuse';
   if (normalized.includes('session revocation') || normalized.includes('session-revocation') || normalized.includes('revoked session') || normalized.includes('logout') || normalized.includes('token invalidation')) return 'session-revocation';
   if (normalized.includes('cdn cache poisoning') || normalized.includes('cdn-cache-poisoning') || normalized.includes('cache key confusion') || normalized.includes('poisoned edge response') || normalized.includes('header variation')) return 'cdn-cache-poisoning';
+  if (normalized.includes('resource exhaustion') || normalized.includes('resource-exhaustion') || normalized.includes('memory burn') || normalized.includes('cpu saturation') || normalized.includes('disk fill') || normalized.includes('runaway workload')) return 'resource-exhaustion';
+  if (normalized.includes('crypto mining') || normalized.includes('crypto-mining') || normalized.includes('unauthorized miner') || normalized.includes('wallet pool') || normalized.includes('hash workload')) return 'crypto-mining';
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
   if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
   if (normalized.includes('saga') || normalized.includes('compensation') || normalized.includes('compensating transaction') || normalized.includes('transaction orchestration')) return 'saga';
   if (normalized.includes('outbox') || normalized.includes('transactional outbox') || normalized.includes('event relay') || normalized.includes('message dispatch')) return 'outbox';
   if (normalized.includes('dns misconfiguration') || normalized.includes('dns-misconfiguration') || normalized.includes('stale record') || normalized.includes('wrong cname') || normalized.includes('zone drift')) return 'dns-misconfiguration';
+  if (normalized.includes('egress cost spike') || normalized.includes('egress-cost-spike') || normalized.includes('outbound bandwidth') || normalized.includes('data transfer surge')) return 'egress-cost-spike';
   if (normalized.includes('network policy') || normalized.includes('network-policy') || normalized.includes('namespace isolation') || normalized.includes('ingress egress') || normalized.includes('deny traffic')) return 'network-policy';
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
+  if (normalized.includes('orphaned resource') || normalized.includes('orphaned-resource') || normalized.includes('unattached volume') || normalized.includes('idle load balancer') || normalized.includes('stale instance') || normalized.includes('leaked allocation')) return 'orphaned-resource';
   if (normalized.includes('backup exposure') || normalized.includes('backup-exposure') || normalized.includes('public snapshot') || normalized.includes('unsecured backup') || normalized.includes('open archive') || normalized.includes('restore leak')) return 'backup-exposure';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('tls downgrade') || normalized.includes('tls-downgrade') || normalized.includes('weak cipher') || normalized.includes('protocol fallback') || normalized.includes('old tls version')) return 'tls-downgrade';
@@ -296,6 +305,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('jwt claim tampering') || normalized.includes('jwt-claim-tampering') || normalized.includes('unsigned token') || normalized.includes('altered audience') || normalized.includes('modified issuer') || normalized.includes('privilege claim')) return 'jwt-claim-tampering';
   if (normalized.includes('account enumeration') || normalized.includes('account-enumeration') || normalized.includes('username probing') || normalized.includes('login error oracle') || normalized.includes('email discovery')) return 'account-enumeration';
   if (normalized.includes('api gateway security') || normalized.includes('api-gateway-security') || normalized.includes('gateway auth layer') || normalized.includes('request validation') || normalized.includes('gateway security')) return 'api-gateway-security';
+  if (normalized.includes('quota drain') || normalized.includes('quota-drain') || normalized.includes('api quota exhaustion') || normalized.includes('service limit depletion') || normalized.includes('request budget burn')) return 'quota-drain';
   if (normalized.includes('rate limiting abuse') || normalized.includes('rate-limiting-abuse') || normalized.includes('excessive requests') || normalized.includes('throttling abuse') || normalized.includes('rate control abuse')) return 'rate-limiting-abuse';
   if (normalized.includes('oauth misuse') || normalized.includes('oauth-misuse') || normalized.includes('redirect uri abuse') || normalized.includes('weak scope') || normalized.includes('consent flow')) return 'oauth-misuse';
   if (normalized.includes('webhook signature bypass') || normalized.includes('webhook-signature-bypass') || normalized.includes('missing hmac verification') || normalized.includes('replayed webhook') || normalized.includes('unsigned payload')) return 'webhook-signature-bypass';
@@ -2026,6 +2036,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('inventory-hoarding-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture cart-stuffing, stock-reservation-abuse, and checkout-bot dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'crypto-mining') {
+    addAssumption(assumptions, 'Crypto-mining behavior is inferred from scenario wording and dependency surface, not measured unauthorized-miner, wallet-pool, or hash-workload telemetry.');
+  }
+
+  if (scenarioKind === 'crypto-mining' && input.dependencyCount > 50) {
+    signals.push('crypto-mining-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture unauthorized-miner, wallet-pool, and hash-workload dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'resource-exhaustion') {
+    addAssumption(assumptions, 'Resource-exhaustion behavior is inferred from scenario wording and dependency surface, not measured memory-burn, CPU-saturation, or disk-fill telemetry.');
+  }
+
+  if (scenarioKind === 'resource-exhaustion' && input.dependencyCount > 50) {
+    signals.push('resource-exhaustion-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture memory-burn, CPU-saturation, and disk-fill dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'egress-cost-spike') {
+    addAssumption(assumptions, 'Egress-cost-spike behavior is inferred from scenario wording and dependency surface, not measured outbound-bandwidth, data-transfer-surge, or cross-region-traffic telemetry.');
+  }
+
+  if (scenarioKind === 'egress-cost-spike' && input.dependencyCount > 50) {
+    signals.push('egress-cost-spike-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture outbound-bandwidth, data-transfer-surge, and cross-region-traffic dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'orphaned-resource') {
+    addAssumption(assumptions, 'Orphaned-resource behavior is inferred from scenario wording and dependency surface, not measured unattached-volume, idle-load-balancer, or stale-instance telemetry.');
+  }
+
+  if (scenarioKind === 'orphaned-resource' && input.dependencyCount > 50) {
+    signals.push('orphaned-resource-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture unattached-volume, idle-load-balancer, and stale-instance dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'quota-drain') {
+    addAssumption(assumptions, 'Quota-drain behavior is inferred from scenario wording and dependency surface, not measured api-quota-exhaustion, service-limit-depletion, or request-budget-burn telemetry.');
+  }
+
+  if (scenarioKind === 'quota-drain' && input.dependencyCount > 50) {
+    signals.push('quota-drain-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture api-quota-exhaustion, service-limit-depletion, and request-budget-burn dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
