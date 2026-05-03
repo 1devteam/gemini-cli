@@ -200,6 +200,14 @@ export type SimulationScenarioKind =
   | 'serverless-permission-sprawl'
   | 'managed-identity-abuse'
   | 'control-plane-throttling'
+  | 'prompt-injection'
+  | 'tool-call-abuse'
+  | 'agent-loop-runaway'
+  | 'model-output-leakage'
+  | 'unsafe-auto-approval'
+  | 'retrieval-poisoning'
+  | 'policy-override-attempt'
+  | 'autonomous-action-drift'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -297,6 +305,14 @@ export interface SimulationPolicyResult {
 function classifyScenario(scenario: string): SimulationScenarioKind {
   const normalized = scenario.toLowerCase();
 
+  if (normalized.includes('prompt injection') || normalized.includes('prompt-injection') || normalized.includes('malicious instruction override') || normalized.includes('system prompt') || normalized.includes('hidden directive')) return 'prompt-injection';
+  if (normalized.includes('tool call abuse') || normalized.includes('tool-call-abuse') || normalized.includes('unauthorized tool invocation') || normalized.includes('excessive tool call') || normalized.includes('unsafe function execution')) return 'tool-call-abuse';
+  if (normalized.includes('agent loop runaway') || normalized.includes('agent-loop-runaway') || normalized.includes('infinite agent loop') || normalized.includes('recursive planning') || normalized.includes('repeated self call') || normalized.includes('automation runaway')) return 'agent-loop-runaway';
+  if (normalized.includes('model output leakage') || normalized.includes('model-output-leakage') || normalized.includes('sensitive output disclosure') || normalized.includes('hidden context leak') || normalized.includes('private training data')) return 'model-output-leakage';
+  if (normalized.includes('unsafe auto approval') || normalized.includes('unsafe-auto-approval') || normalized.includes('automatic approval') || normalized.includes('skipped human review') || normalized.includes('autonomous approval') || normalized.includes('dangerous action')) return 'unsafe-auto-approval';
+  if (normalized.includes('retrieval poisoning') || normalized.includes('retrieval-poisoning') || normalized.includes('poisoned document') || normalized.includes('vector store contamination') || normalized.includes('malicious context retrieval')) return 'retrieval-poisoning';
+  if (normalized.includes('policy override attempt') || normalized.includes('policy-override-attempt') || normalized.includes('guardrail bypass') || normalized.includes('safety policy override') || normalized.includes('instruction hierarchy attack')) return 'policy-override-attempt';
+  if (normalized.includes('autonomous action drift') || normalized.includes('autonomous-action-drift') || normalized.includes('agent action deviates') || normalized.includes('unsupervised execution') || normalized.includes('goal drift')) return 'autonomous-action-drift';
   if (normalized.includes('cloudtrail disablement') || normalized.includes('cloudtrail-disablement') || normalized.includes('audit trail disabled') || normalized.includes('logging stopped') || normalized.includes('control plane visibility lost')) return 'cloudtrail-disablement';
   if (normalized.includes('kms key misuse') || normalized.includes('kms-key-misuse') || normalized.includes('decrypt permission abuse') || normalized.includes('key policy wildcard') || normalized.includes('encryption key exposure')) return 'kms-key-misuse';
   if (normalized.includes('security group exposure') || normalized.includes('security-group-exposure') || normalized.includes('open ingress') || normalized.includes('0.0.0.0') || normalized.includes('public port') || normalized.includes('firewall rule exposure')) return 'security-group-exposure';
@@ -2770,6 +2786,86 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('control-plane-throttling-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture api-control-plane-throttle, management-api-saturation, and request-limit dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'prompt-injection') {
+    addAssumption(assumptions, 'Prompt-injection behavior is inferred from scenario wording and dependency surface, not measured malicious-instruction-override, hidden-directive, or system-prompt telemetry.');
+  }
+
+  if (scenarioKind === 'prompt-injection' && input.dependencyCount > 50) {
+    signals.push('prompt-injection-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture malicious-instruction-override, hidden-directive, and system-prompt dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'tool-call-abuse') {
+    addAssumption(assumptions, 'Tool-call-abuse behavior is inferred from scenario wording and dependency surface, not measured unauthorized-tool-invocation, excessive-tool-call, or unsafe-function-execution telemetry.');
+  }
+
+  if (scenarioKind === 'tool-call-abuse' && input.dependencyCount > 50) {
+    signals.push('tool-call-abuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture unauthorized-tool-invocation, excessive-tool-call, and unsafe-function-execution dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'agent-loop-runaway') {
+    addAssumption(assumptions, 'Agent-loop-runaway behavior is inferred from scenario wording and dependency surface, not measured infinite-agent-loop, recursive-planning, or automation-runaway telemetry.');
+  }
+
+  if (scenarioKind === 'agent-loop-runaway' && input.dependencyCount > 50) {
+    signals.push('agent-loop-runaway-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture infinite-agent-loop, recursive-planning, and automation-runaway dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'model-output-leakage') {
+    addAssumption(assumptions, 'Model-output-leakage behavior is inferred from scenario wording and dependency surface, not measured sensitive-output-disclosure, hidden-context-leak, or private-training-data telemetry.');
+  }
+
+  if (scenarioKind === 'model-output-leakage' && input.dependencyCount > 50) {
+    signals.push('model-output-leakage-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture sensitive-output-disclosure, hidden-context-leak, and private-training-data dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'unsafe-auto-approval') {
+    addAssumption(assumptions, 'Unsafe-auto-approval behavior is inferred from scenario wording and dependency surface, not measured automatic-approval, skipped-human-review, or dangerous-action telemetry.');
+  }
+
+  if (scenarioKind === 'unsafe-auto-approval' && input.dependencyCount > 50) {
+    signals.push('unsafe-auto-approval-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture automatic-approval, skipped-human-review, and dangerous-action dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'retrieval-poisoning') {
+    addAssumption(assumptions, 'Retrieval-poisoning behavior is inferred from scenario wording and dependency surface, not measured poisoned-document, vector-store-contamination, or malicious-context-retrieval telemetry.');
+  }
+
+  if (scenarioKind === 'retrieval-poisoning' && input.dependencyCount > 50) {
+    signals.push('retrieval-poisoning-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture poisoned-document, vector-store-contamination, and malicious-context-retrieval dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'policy-override-attempt') {
+    addAssumption(assumptions, 'Policy-override-attempt behavior is inferred from scenario wording and dependency surface, not measured guardrail-bypass, safety-policy-override, or instruction-hierarchy-attack telemetry.');
+  }
+
+  if (scenarioKind === 'policy-override-attempt' && input.dependencyCount > 50) {
+    signals.push('policy-override-attempt-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture guardrail-bypass, safety-policy-override, and instruction-hierarchy-attack dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'autonomous-action-drift') {
+    addAssumption(assumptions, 'Autonomous-action-drift behavior is inferred from scenario wording and dependency surface, not measured agent-action-deviates, unsupervised-execution, or goal-drift telemetry.');
+  }
+
+  if (scenarioKind === 'autonomous-action-drift' && input.dependencyCount > 50) {
+    signals.push('autonomous-action-drift-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture agent-action-deviates, unsupervised-execution, and goal-drift dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
