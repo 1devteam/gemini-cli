@@ -158,6 +158,11 @@ export type SimulationScenarioKind =
   | 'malicious-postinstall'
   | 'registry-token-leak'
   | 'package-publish-takeover'
+  | 'process-injection'
+  | 'shell-command-injection'
+  | 'unsafe-deserialization'
+  | 'path-traversal'
+  | 'file-permission-drift'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -277,6 +282,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('orphaned resource') || normalized.includes('orphaned-resource') || normalized.includes('unattached volume') || normalized.includes('idle load balancer') || normalized.includes('stale instance') || normalized.includes('leaked allocation')) return 'orphaned-resource';
   if (normalized.includes('backup exposure') || normalized.includes('backup-exposure') || normalized.includes('public snapshot') || normalized.includes('unsecured backup') || normalized.includes('open archive') || normalized.includes('restore leak')) return 'backup-exposure';
+  if (normalized.includes('process injection') || normalized.includes('process-injection') || normalized.includes('ptrace attach') || normalized.includes('dll injection') || normalized.includes('remote thread') || normalized.includes('memory write')) return 'process-injection';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('tls downgrade') || normalized.includes('tls-downgrade') || normalized.includes('weak cipher') || normalized.includes('protocol fallback') || normalized.includes('old tls version')) return 'tls-downgrade';
   if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
@@ -332,6 +338,10 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('rate limiting abuse') || normalized.includes('rate-limiting-abuse') || normalized.includes('excessive requests') || normalized.includes('throttling abuse') || normalized.includes('rate control abuse')) return 'rate-limiting-abuse';
   if (normalized.includes('oauth misuse') || normalized.includes('oauth-misuse') || normalized.includes('redirect uri abuse') || normalized.includes('weak scope') || normalized.includes('consent flow')) return 'oauth-misuse';
   if (normalized.includes('webhook signature bypass') || normalized.includes('webhook-signature-bypass') || normalized.includes('missing hmac verification') || normalized.includes('replayed webhook') || normalized.includes('unsigned payload')) return 'webhook-signature-bypass';
+  if (normalized.includes('shell command injection') || normalized.includes('shell-command-injection') || normalized.includes('unsanitized exec') || normalized.includes('user command') || normalized.includes('subprocess spawn') || normalized.includes('argument escape')) return 'shell-command-injection';
+  if (normalized.includes('unsafe deserialization') || normalized.includes('unsafe-deserialization') || normalized.includes('untrusted object') || normalized.includes('deserialize gadget') || normalized.includes('gadget chain') || normalized.includes('serialized payload')) return 'unsafe-deserialization';
+  if (normalized.includes('path traversal') || normalized.includes('path-traversal') || normalized.includes('dot dot slash') || normalized.includes('directory escape') || normalized.includes('arbitrary file read') || normalized.includes('file path bypass')) return 'path-traversal';
+  if (normalized.includes('file permission drift') || normalized.includes('file-permission-drift') || normalized.includes('world writable') || normalized.includes('chmod change') || normalized.includes('ownership mismatch') || normalized.includes('sensitive file mode')) return 'file-permission-drift';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
   if (normalized.includes('package publish takeover') || normalized.includes('package-publish-takeover') || normalized.includes('maintainer account takeover') || normalized.includes('unauthorized release') || normalized.includes('compromised package owner')) return 'package-publish-takeover';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
@@ -2266,6 +2276,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('package-publish-takeover-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture maintainer-account-takeover, unauthorized-release, and compromised-package-owner dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'process-injection') {
+    addAssumption(assumptions, 'Process-injection behavior is inferred from scenario wording and dependency surface, not measured ptrace-attach, dll-injection, or remote-thread telemetry.');
+  }
+
+  if (scenarioKind === 'process-injection' && input.dependencyCount > 50) {
+    signals.push('process-injection-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture ptrace-attach, dll-injection, and remote-thread dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'shell-command-injection') {
+    addAssumption(assumptions, 'Shell-command-injection behavior is inferred from scenario wording and dependency surface, not measured unsanitized-exec, user-command, or subprocess-spawn telemetry.');
+  }
+
+  if (scenarioKind === 'shell-command-injection' && input.dependencyCount > 50) {
+    signals.push('shell-command-injection-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture unsanitized-exec, user-command, and subprocess-spawn dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'unsafe-deserialization') {
+    addAssumption(assumptions, 'Unsafe-deserialization behavior is inferred from scenario wording and dependency surface, not measured untrusted-object, deserialize-gadget, or gadget-chain telemetry.');
+  }
+
+  if (scenarioKind === 'unsafe-deserialization' && input.dependencyCount > 50) {
+    signals.push('unsafe-deserialization-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture untrusted-object, deserialize-gadget, and gadget-chain dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'path-traversal') {
+    addAssumption(assumptions, 'Path-traversal behavior is inferred from scenario wording and dependency surface, not measured dot-dot-slash, directory-escape, or arbitrary-file-read telemetry.');
+  }
+
+  if (scenarioKind === 'path-traversal' && input.dependencyCount > 50) {
+    signals.push('path-traversal-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture dot-dot-slash, directory-escape, and arbitrary-file-read dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'file-permission-drift') {
+    addAssumption(assumptions, 'File-permission-drift behavior is inferred from scenario wording and dependency surface, not measured world-writable, chmod-change, or ownership-mismatch telemetry.');
+  }
+
+  if (scenarioKind === 'file-permission-drift' && input.dependencyCount > 50) {
+    signals.push('file-permission-drift-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture world-writable, chmod-change, and ownership-mismatch dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
