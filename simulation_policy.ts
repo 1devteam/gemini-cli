@@ -176,6 +176,14 @@ export type SimulationScenarioKind =
   | 'privileged-action-replay'
   | 'scope-escalation'
   | 'object-ownership-bypass'
+  | 'double-spend'
+  | 'race-condition'
+  | 'lost-update'
+  | 'stale-read'
+  | 'write-skew'
+  | 'replay-transaction'
+  | 'partial-commit'
+  | 'ledger-tampering'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -273,6 +281,14 @@ export interface SimulationPolicyResult {
 function classifyScenario(scenario: string): SimulationScenarioKind {
   const normalized = scenario.toLowerCase();
 
+  if (normalized.includes('double spend') || normalized.includes('double-spend') || normalized.includes('duplicate debit') || normalized.includes('repeated payment') || normalized.includes('balance reuse')) return 'double-spend';
+  if (normalized.includes('race condition') || normalized.includes('race-condition') || normalized.includes('concurrent update') || normalized.includes('timing window') || normalized.includes('check then act') || normalized.includes('shared state conflict')) return 'race-condition';
+  if (normalized.includes('lost update') || normalized.includes('lost-update') || normalized.includes('overwrite concurrent write') || normalized.includes('stale version') || normalized.includes('missing compare and swap')) return 'lost-update';
+  if (normalized.includes('stale read') || normalized.includes('stale-read') || normalized.includes('replica lag') || normalized.includes('outdated read') || normalized.includes('read after write inconsistency')) return 'stale-read';
+  if (normalized.includes('write skew') || normalized.includes('write-skew') || normalized.includes('snapshot isolation') || normalized.includes('invariant violation') || normalized.includes('concurrent transaction') || normalized.includes('constraint bypass')) return 'write-skew';
+  if (normalized.includes('replay transaction') || normalized.includes('replay-transaction') || normalized.includes('duplicate request') || normalized.includes('nonce reuse') || normalized.includes('idempotency failure') || normalized.includes('repeated transaction')) return 'replay-transaction';
+  if (normalized.includes('partial commit') || normalized.includes('partial-commit') || normalized.includes('half written transaction') || normalized.includes('atomicity failure') || normalized.includes('incomplete commit') || normalized.includes('inconsistent state')) return 'partial-commit';
+  if (normalized.includes('ledger tampering') || normalized.includes('ledger-tampering') || normalized.includes('audit ledger mutation') || normalized.includes('balance history altered') || normalized.includes('transaction log rewrite')) return 'ledger-tampering';
   if (normalized.includes('dead letter queue') || normalized.includes('dead-letter-queue') || normalized.includes('dlq') || normalized.includes('poison message') || normalized.includes('retry exhausted')) return 'dead-letter-queue';
   if (normalized.includes('retry') || normalized.includes('storm')) return 'retry';
   if (normalized.includes('cold-start') || normalized.includes('cold start') || normalized.includes('startup')) return 'cold-start';
@@ -2482,6 +2498,86 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('object-ownership-bypass-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture owner-check-missing, resource-owner-mismatch, and object-access dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'double-spend') {
+    addAssumption(assumptions, 'Double-spend behavior is inferred from scenario wording and dependency surface, not measured duplicate-debit, repeated-payment, or balance-reuse telemetry.');
+  }
+
+  if (scenarioKind === 'double-spend' && input.dependencyCount > 50) {
+    signals.push('double-spend-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture duplicate-debit, repeated-payment, and balance-reuse dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'race-condition') {
+    addAssumption(assumptions, 'Race-condition behavior is inferred from scenario wording and dependency surface, not measured concurrent-update, timing-window, or shared-state-conflict telemetry.');
+  }
+
+  if (scenarioKind === 'race-condition' && input.dependencyCount > 50) {
+    signals.push('race-condition-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture concurrent-update, timing-window, and shared-state-conflict dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'lost-update') {
+    addAssumption(assumptions, 'Lost-update behavior is inferred from scenario wording and dependency surface, not measured overwrite-concurrent-write, stale-version, or compare-and-swap telemetry.');
+  }
+
+  if (scenarioKind === 'lost-update' && input.dependencyCount > 50) {
+    signals.push('lost-update-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture overwrite-concurrent-write, stale-version, and compare-and-swap dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'stale-read') {
+    addAssumption(assumptions, 'Stale-read behavior is inferred from scenario wording and dependency surface, not measured replica-lag, outdated-read, or read-after-write-inconsistency telemetry.');
+  }
+
+  if (scenarioKind === 'stale-read' && input.dependencyCount > 50) {
+    signals.push('stale-read-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture replica-lag, outdated-read, and read-after-write-inconsistency dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'write-skew') {
+    addAssumption(assumptions, 'Write-skew behavior is inferred from scenario wording and dependency surface, not measured snapshot-isolation, invariant-violation, or constraint-bypass telemetry.');
+  }
+
+  if (scenarioKind === 'write-skew' && input.dependencyCount > 50) {
+    signals.push('write-skew-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture snapshot-isolation, invariant-violation, and constraint-bypass dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'replay-transaction') {
+    addAssumption(assumptions, 'Replay-transaction behavior is inferred from scenario wording and dependency surface, not measured duplicate-request, nonce-reuse, or idempotency-failure telemetry.');
+  }
+
+  if (scenarioKind === 'replay-transaction' && input.dependencyCount > 50) {
+    signals.push('replay-transaction-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture duplicate-request, nonce-reuse, and idempotency-failure dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'partial-commit') {
+    addAssumption(assumptions, 'Partial-commit behavior is inferred from scenario wording and dependency surface, not measured half-written-transaction, atomicity-failure, or incomplete-commit telemetry.');
+  }
+
+  if (scenarioKind === 'partial-commit' && input.dependencyCount > 50) {
+    signals.push('partial-commit-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture half-written-transaction, atomicity-failure, and incomplete-commit dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'ledger-tampering') {
+    addAssumption(assumptions, 'Ledger-tampering behavior is inferred from scenario wording and dependency surface, not measured audit-ledger-mutation, balance-history-altered, or transaction-log-rewrite telemetry.');
+  }
+
+  if (scenarioKind === 'ledger-tampering' && input.dependencyCount > 50) {
+    signals.push('ledger-tampering-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture audit-ledger-mutation, balance-history-altered, and transaction-log-rewrite dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
