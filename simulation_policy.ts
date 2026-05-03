@@ -148,6 +148,11 @@ export type SimulationScenarioKind =
   | 'artifact-poisoning'
   | 'runner-compromise'
   | 'deployment-approval-bypass'
+  | 'branch-protection-bypass'
+  | 'force-push-risk'
+  | 'malicious-pr'
+  | 'codeowner-bypass'
+  | 'repo-secret-sprawl'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -273,6 +278,8 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('token expiry') || normalized.includes('token-expiry') || normalized.includes('expired token') || normalized.includes('refresh token') || normalized.includes('session renewal')) return 'token-expiry';
   if (normalized.includes('key compromise') || normalized.includes('key-compromise') || normalized.includes('compromised key') || normalized.includes('credential leak') || normalized.includes('key revoke')) return 'key-compromise';
   if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
+  if (normalized.includes('branch protection bypass') || normalized.includes('branch-protection-bypass') || normalized.includes('required review skipped') || normalized.includes('protected branch') || normalized.includes('direct merge')) return 'branch-protection-bypass';
+  if (normalized.includes('codeowner bypass') || normalized.includes('codeowner-bypass') || normalized.includes('missing owner review') || normalized.includes('code owners ignored') || normalized.includes('protected path change')) return 'codeowner-bypass';
   if (normalized.includes('workflow permission abuse') || normalized.includes('workflow-permission-abuse') || normalized.includes('overbroad github token') || normalized.includes('write permission') || normalized.includes('privileged workflow')) return 'workflow-permission-abuse';
   if (normalized.includes('permission boundary') || normalized.includes('permission-boundary') || normalized.includes('least privilege') || normalized.includes('scoped permission') || normalized.includes('access boundary')) return 'permission-boundary';
   if (normalized.includes('cors policy') || normalized.includes('cors-policy') || normalized.includes('cross origin') || normalized.includes('allowed origin') || normalized.includes('preflight request')) return 'cors-policy';
@@ -292,6 +299,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection')) return 'load-shedding';
   if (normalized.includes('service mesh policy') || normalized.includes('service-mesh-policy') || normalized.includes('sidecar mtls') || normalized.includes('traffic policy') || normalized.includes('mesh enforcement')) return 'service-mesh-policy';
   if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
+  if (normalized.includes('repo secret sprawl') || normalized.includes('repo-secret-sprawl') || normalized.includes('committed secret') || normalized.includes('private key checked in') || normalized.includes('credential spread')) return 'repo-secret-sprawl';
   if (normalized.includes('pipeline secret leak') || normalized.includes('pipeline-secret-leak') || normalized.includes('ci secret exposed') || normalized.includes('masked variable printed') || normalized.includes('build log')) return 'pipeline-secret-leak';
   if (normalized.includes('log secret exposure') || normalized.includes('log-secret-exposure') || normalized.includes('api key in logs') || normalized.includes('credential dump') || normalized.includes('token logged')) return 'log-secret-exposure';
   if (normalized.includes('pii leakage') || normalized.includes('pii-leakage') || normalized.includes('personal data exposure') || normalized.includes('sensitive field disclosure') || normalized.includes('customer identifier')) return 'pii-leakage';
@@ -349,6 +357,8 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
   if (normalized.includes('idempotency') || normalized.includes('idempotent') || normalized.includes('duplicate replay') || normalized.includes('duplicate request') || normalized.includes('dedupe')) return 'idempotency';
   if (normalized.includes('circuit breaker') || normalized.includes('circuit-breaker') || normalized.includes('open circuit') || normalized.includes('half open') || normalized.includes('trip threshold')) return 'circuit-breaker';
+  if (normalized.includes('force push risk') || normalized.includes('force-push-risk') || normalized.includes('rewritten history') || normalized.includes('non fast forward') || normalized.includes('branch overwrite') || normalized.includes('commit loss')) return 'force-push-risk';
+  if (normalized.includes('malicious pr') || normalized.includes('malicious-pr') || normalized.includes('hostile contribution') || normalized.includes('hidden payload') || normalized.includes('review evasion')) return 'malicious-pr';
   if (normalized.includes('deployment approval bypass') || normalized.includes('deployment-approval-bypass') || normalized.includes('skipped reviewer') || normalized.includes('environment protection override') || normalized.includes('manual gate')) return 'deployment-approval-bypass';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
@@ -2146,6 +2156,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('deployment-approval-bypass-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture skipped-reviewer, environment-protection-override, and manual-gate dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'branch-protection-bypass') {
+    addAssumption(assumptions, 'Branch-protection-bypass behavior is inferred from scenario wording and dependency surface, not measured required-review-skipped, protected-branch, or direct-merge telemetry.');
+  }
+
+  if (scenarioKind === 'branch-protection-bypass' && input.dependencyCount > 50) {
+    signals.push('branch-protection-bypass-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture required-review-skipped, protected-branch, and direct-merge dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'force-push-risk') {
+    addAssumption(assumptions, 'Force-push-risk behavior is inferred from scenario wording and dependency surface, not measured rewritten-history, non-fast-forward, or branch-overwrite telemetry.');
+  }
+
+  if (scenarioKind === 'force-push-risk' && input.dependencyCount > 50) {
+    signals.push('force-push-risk-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture rewritten-history, non-fast-forward, and branch-overwrite dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'malicious-pr') {
+    addAssumption(assumptions, 'Malicious-pr behavior is inferred from scenario wording and dependency surface, not measured hostile-contribution, hidden-payload, or review-evasion telemetry.');
+  }
+
+  if (scenarioKind === 'malicious-pr' && input.dependencyCount > 50) {
+    signals.push('malicious-pr-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture hostile-contribution, hidden-payload, and review-evasion dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'codeowner-bypass') {
+    addAssumption(assumptions, 'Codeowner-bypass behavior is inferred from scenario wording and dependency surface, not measured missing-owner-review, code-owners-ignored, or protected-path-change telemetry.');
+  }
+
+  if (scenarioKind === 'codeowner-bypass' && input.dependencyCount > 50) {
+    signals.push('codeowner-bypass-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture missing-owner-review, code-owners-ignored, and protected-path-change dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'repo-secret-sprawl') {
+    addAssumption(assumptions, 'Repo-secret-sprawl behavior is inferred from scenario wording and dependency surface, not measured committed-secret, private-key-checked-in, or credential-spread telemetry.');
+  }
+
+  if (scenarioKind === 'repo-secret-sprawl' && input.dependencyCount > 50) {
+    signals.push('repo-secret-sprawl-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture committed-secret, private-key-checked-in, and credential-spread dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
