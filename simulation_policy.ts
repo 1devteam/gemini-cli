@@ -168,6 +168,14 @@ export type SimulationScenarioKind =
   | 'graphql-depth-abuse'
   | 'http-request-smuggling'
   | 'host-header-injection'
+  | 'idor'
+  | 'rbac-bypass'
+  | 'abac-policy-drift'
+  | 'tenant-boundary-break'
+  | 'admin-route-exposure'
+  | 'privileged-action-replay'
+  | 'scope-escalation'
+  | 'object-ownership-bypass'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -289,12 +297,16 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('orphaned resource') || normalized.includes('orphaned-resource') || normalized.includes('unattached volume') || normalized.includes('idle load balancer') || normalized.includes('stale instance') || normalized.includes('leaked allocation')) return 'orphaned-resource';
   if (normalized.includes('backup exposure') || normalized.includes('backup-exposure') || normalized.includes('public snapshot') || normalized.includes('unsecured backup') || normalized.includes('open archive') || normalized.includes('restore leak')) return 'backup-exposure';
   if (normalized.includes('process injection') || normalized.includes('process-injection') || normalized.includes('ptrace attach') || normalized.includes('dll injection') || normalized.includes('remote thread') || normalized.includes('memory write')) return 'process-injection';
+  if (normalized.includes('object ownership bypass') || normalized.includes('object-ownership-bypass') || normalized.includes('owner check missing') || normalized.includes('resource owner mismatch') || normalized.includes('object access path')) return 'object-ownership-bypass';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('tls downgrade') || normalized.includes('tls-downgrade') || normalized.includes('weak cipher') || normalized.includes('protocol fallback') || normalized.includes('old tls version')) return 'tls-downgrade';
   if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
   if (normalized.includes('token expiry') || normalized.includes('token-expiry') || normalized.includes('expired token') || normalized.includes('refresh token') || normalized.includes('session renewal')) return 'token-expiry';
   if (normalized.includes('key compromise') || normalized.includes('key-compromise') || normalized.includes('compromised key') || normalized.includes('credential leak') || normalized.includes('key revoke')) return 'key-compromise';
   if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
+  if (normalized.includes('idor') || normalized.includes('insecure direct object reference') || normalized.includes('object id manipulation') || normalized.includes('unauthorized record access')) return 'idor';
+  if (normalized.includes('rbac bypass') || normalized.includes('rbac-bypass') || normalized.includes('role check skipped') || normalized.includes('unauthorized role access') || normalized.includes('permission gate bypass')) return 'rbac-bypass';
+  if (normalized.includes('abac policy drift') || normalized.includes('abac-policy-drift') || normalized.includes('attribute based access') || normalized.includes('stale attribute') || normalized.includes('mismatched condition') || normalized.includes('policy drift')) return 'abac-policy-drift';
   if (normalized.includes('branch protection bypass') || normalized.includes('branch-protection-bypass') || normalized.includes('required review skipped') || normalized.includes('protected branch') || normalized.includes('direct merge')) return 'branch-protection-bypass';
   if (normalized.includes('codeowner bypass') || normalized.includes('codeowner-bypass') || normalized.includes('missing owner review') || normalized.includes('code owners ignored') || normalized.includes('protected path change')) return 'codeowner-bypass';
   if (normalized.includes('workflow permission abuse') || normalized.includes('workflow-permission-abuse') || normalized.includes('overbroad github token') || normalized.includes('write permission') || normalized.includes('privileged workflow')) return 'workflow-permission-abuse';
@@ -336,6 +348,9 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('sandbox escape') || normalized.includes('sandbox-escape') || normalized.includes('container breakout') || normalized.includes('namespace escape') || normalized.includes('isolation bypass')) return 'sandbox-escape';
   if (normalized.includes('iam misconfiguration') || normalized.includes('iam-misconfiguration') || normalized.includes('overly permissive role') || normalized.includes('wildcard policy') || normalized.includes('access grant')) return 'iam-misconfiguration';
   if (normalized.includes('cross account access') || normalized.includes('cross-account-access') || normalized.includes('external account') || normalized.includes('trust boundary') || normalized.includes('assume role')) return 'cross-account-access';
+  if (normalized.includes('admin route exposure') || normalized.includes('admin-route-exposure') || normalized.includes('exposed admin endpoint') || normalized.includes('missing admin guard') || normalized.includes('privileged route public')) return 'admin-route-exposure';
+  if (normalized.includes('privileged action replay') || normalized.includes('privileged-action-replay') || normalized.includes('repeated admin action') || normalized.includes('nonce missing') || normalized.includes('replayed privileged request')) return 'privileged-action-replay';
+  if (normalized.includes('scope escalation') || normalized.includes('scope-escalation') || normalized.includes('oauth scope expansion') || normalized.includes('privilege scope widened') || normalized.includes('unauthorized scope grant')) return 'scope-escalation';
   if (normalized.includes('credential stuffing') || normalized.includes('credential-stuffing') || normalized.includes('reused password') || normalized.includes('login spray') || normalized.includes('breached credential') || normalized.includes('automated login')) return 'credential-stuffing';
   if (normalized.includes('mfa bypass') || normalized.includes('mfa-bypass') || normalized.includes('push fatigue') || normalized.includes('one time code interception') || normalized.includes('second factor downgrade')) return 'mfa-bypass';
   if (normalized.includes('jwt claim tampering') || normalized.includes('jwt-claim-tampering') || normalized.includes('unsigned token') || normalized.includes('altered audience') || normalized.includes('modified issuer') || normalized.includes('privilege claim')) return 'jwt-claim-tampering';
@@ -368,6 +383,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
   if (normalized.includes('rollback') || normalized.includes('roll back') || normalized.includes('revert')) return 'rollback';
   if (normalized.includes('migration') || normalized.includes('migrate') || normalized.includes('schema change')) return 'migration';
+  if (normalized.includes('tenant boundary break') || normalized.includes('tenant-boundary-break') || normalized.includes('cross tenant data access') || normalized.includes('tenant isolation failure') || normalized.includes('organization boundary')) return 'tenant-boundary-break';
   if (normalized.includes('multi-tenant') || normalized.includes('multitenant') || normalized.includes('tenant isolation') || normalized.includes('tenant')) return 'multi-tenant';
   if (normalized.includes('scheduler') || normalized.includes('schedule') || normalized.includes('cron') || normalized.includes('job')) return 'scheduler';
   if (normalized.includes('webhook') || normalized.includes('callback') || normalized.includes('event delivery') || normalized.includes('endpoint')) return 'webhook';
@@ -2386,6 +2402,86 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('host-header-injection-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture poisoned-host-header, password-reset-url, and cache-poisoning dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'idor') {
+    addAssumption(assumptions, 'Idor behavior is inferred from scenario wording and dependency surface, not measured object-id-manipulation or unauthorized-record-access telemetry.');
+  }
+
+  if (scenarioKind === 'idor' && input.dependencyCount > 50) {
+    signals.push('idor-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture object-id-manipulation and unauthorized-record-access dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'rbac-bypass') {
+    addAssumption(assumptions, 'Rbac-bypass behavior is inferred from scenario wording and dependency surface, not measured role-check-skipped, unauthorized-role-access, or permission-gate-bypass telemetry.');
+  }
+
+  if (scenarioKind === 'rbac-bypass' && input.dependencyCount > 50) {
+    signals.push('rbac-bypass-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture role-check-skipped, unauthorized-role-access, and permission-gate-bypass dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'abac-policy-drift') {
+    addAssumption(assumptions, 'Abac-policy-drift behavior is inferred from scenario wording and dependency surface, not measured stale-attribute, mismatched-condition, or policy-drift telemetry.');
+  }
+
+  if (scenarioKind === 'abac-policy-drift' && input.dependencyCount > 50) {
+    signals.push('abac-policy-drift-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture stale-attribute, mismatched-condition, and policy-drift dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'tenant-boundary-break') {
+    addAssumption(assumptions, 'Tenant-boundary-break behavior is inferred from scenario wording and dependency surface, not measured cross-tenant-data-access, tenant-isolation-failure, or organization-boundary telemetry.');
+  }
+
+  if (scenarioKind === 'tenant-boundary-break' && input.dependencyCount > 50) {
+    signals.push('tenant-boundary-break-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture cross-tenant-data-access, tenant-isolation-failure, and organization-boundary dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'admin-route-exposure') {
+    addAssumption(assumptions, 'Admin-route-exposure behavior is inferred from scenario wording and dependency surface, not measured exposed-admin-endpoint, missing-admin-guard, or privileged-route-public telemetry.');
+  }
+
+  if (scenarioKind === 'admin-route-exposure' && input.dependencyCount > 50) {
+    signals.push('admin-route-exposure-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture exposed-admin-endpoint, missing-admin-guard, and privileged-route-public dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'privileged-action-replay') {
+    addAssumption(assumptions, 'Privileged-action-replay behavior is inferred from scenario wording and dependency surface, not measured repeated-admin-action, nonce-missing, or replayed-privileged-request telemetry.');
+  }
+
+  if (scenarioKind === 'privileged-action-replay' && input.dependencyCount > 50) {
+    signals.push('privileged-action-replay-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture repeated-admin-action, nonce-missing, and replayed-privileged-request dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'scope-escalation') {
+    addAssumption(assumptions, 'Scope-escalation behavior is inferred from scenario wording and dependency surface, not measured oauth-scope-expansion, privilege-scope-widened, or unauthorized-scope-grant telemetry.');
+  }
+
+  if (scenarioKind === 'scope-escalation' && input.dependencyCount > 50) {
+    signals.push('scope-escalation-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture oauth-scope-expansion, privilege-scope-widened, and unauthorized-scope-grant dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'object-ownership-bypass') {
+    addAssumption(assumptions, 'Object-ownership-bypass behavior is inferred from scenario wording and dependency surface, not measured owner-check-missing, resource-owner-mismatch, or object-access telemetry.');
+  }
+
+  if (scenarioKind === 'object-ownership-bypass' && input.dependencyCount > 50) {
+    signals.push('object-ownership-bypass-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture owner-check-missing, resource-owner-mismatch, and object-access dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
