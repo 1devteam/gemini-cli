@@ -163,6 +163,11 @@ export type SimulationScenarioKind =
   | 'unsafe-deserialization'
   | 'path-traversal'
   | 'file-permission-drift'
+  | 'ssrf'
+  | 'open-redirect'
+  | 'graphql-depth-abuse'
+  | 'http-request-smuggling'
+  | 'host-header-injection'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -266,6 +271,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('session fixation') || normalized.includes('session-fixation') || normalized.includes('preset session id') || normalized.includes('cookie reuse') || normalized.includes('login binding')) return 'session-fixation';
   if (normalized.includes('refresh token reuse') || normalized.includes('refresh-token-reuse') || normalized.includes('stolen refresh token') || normalized.includes('token replay') || normalized.includes('rotation failure')) return 'refresh-token-reuse';
   if (normalized.includes('session revocation') || normalized.includes('session-revocation') || normalized.includes('revoked session') || normalized.includes('logout') || normalized.includes('token invalidation')) return 'session-revocation';
+  if (normalized.includes('host header injection') || normalized.includes('host-header-injection') || normalized.includes('poisoned host header') || normalized.includes('password reset url') || normalized.includes('host header')) return 'host-header-injection';
   if (normalized.includes('cdn cache poisoning') || normalized.includes('cdn-cache-poisoning') || normalized.includes('cache key confusion') || normalized.includes('poisoned edge response') || normalized.includes('header variation')) return 'cdn-cache-poisoning';
   if (normalized.includes('resource exhaustion') || normalized.includes('resource-exhaustion') || normalized.includes('memory burn') || normalized.includes('cpu saturation') || normalized.includes('disk fill') || normalized.includes('runaway workload')) return 'resource-exhaustion';
   if (normalized.includes('crypto mining') || normalized.includes('crypto-mining') || normalized.includes('unauthorized miner') || normalized.includes('wallet pool') || normalized.includes('hash workload')) return 'crypto-mining';
@@ -297,7 +303,8 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('csrf protection') || normalized.includes('csrf-protection') || normalized.includes('cross site request forgery') || normalized.includes('csrf token') || normalized.includes('same site cookie')) return 'csrf-protection';
   if (normalized.includes('xss defense') || normalized.includes('xss-defense') || normalized.includes('cross site scripting') || normalized.includes('output encoding') || normalized.includes('content security policy')) return 'xss-defense';
   if (normalized.includes('sql injection') || normalized.includes('sql-injection') || normalized.includes('parameterized query') || normalized.includes('prepared statement')) return 'sql-injection';
-  if (normalized.includes('ssrf defense') || normalized.includes('ssrf-defense') || normalized.includes('server side request forgery') || normalized.includes('metadata block') || normalized.includes('egress allowlist')) return 'ssrf-defense';
+  if (normalized.includes('ssrf defense') || normalized.includes('ssrf-defense') || normalized.includes('metadata block') || normalized.includes('egress allowlist') || normalized.includes('url fetch guard')) return 'ssrf-defense';
+  if (normalized.includes('ssrf') || normalized.includes('server side request forgery') || normalized.includes('internal metadata request') || normalized.includes('cloud metadata endpoint')) return 'ssrf';
   if (normalized.includes('request signing') || normalized.includes('request-signing') || normalized.includes('hmac signature') || normalized.includes('signed request') || normalized.includes('replay protection')) return 'request-signing';
   if (normalized.includes('supply chain') || normalized.includes('supply-chain') || normalized.includes('build provenance') || normalized.includes('package integrity') || normalized.includes('dependency trust')) return 'supply-chain';
   if (normalized.includes('artifact integrity') || normalized.includes('artifact-integrity') || normalized.includes('checksum verification') || normalized.includes('signed artifact') || normalized.includes('provenance')) return 'artifact-integrity';
@@ -333,6 +340,8 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('mfa bypass') || normalized.includes('mfa-bypass') || normalized.includes('push fatigue') || normalized.includes('one time code interception') || normalized.includes('second factor downgrade')) return 'mfa-bypass';
   if (normalized.includes('jwt claim tampering') || normalized.includes('jwt-claim-tampering') || normalized.includes('unsigned token') || normalized.includes('altered audience') || normalized.includes('modified issuer') || normalized.includes('privilege claim')) return 'jwt-claim-tampering';
   if (normalized.includes('account enumeration') || normalized.includes('account-enumeration') || normalized.includes('username probing') || normalized.includes('login error oracle') || normalized.includes('email discovery')) return 'account-enumeration';
+  if (normalized.includes('graphql depth abuse') || normalized.includes('graphql-depth-abuse') || normalized.includes('nested query recursion') || normalized.includes('expensive resolver') || normalized.includes('query complexity')) return 'graphql-depth-abuse';
+  if (normalized.includes('http request smuggling') || normalized.includes('http-request-smuggling') || normalized.includes('content length transfer encoding') || normalized.includes('desync proxy') || normalized.includes('parser ambiguity')) return 'http-request-smuggling';
   if (normalized.includes('api gateway security') || normalized.includes('api-gateway-security') || normalized.includes('gateway auth layer') || normalized.includes('request validation') || normalized.includes('gateway security')) return 'api-gateway-security';
   if (normalized.includes('quota drain') || normalized.includes('quota-drain') || normalized.includes('api quota exhaustion') || normalized.includes('service limit depletion') || normalized.includes('request budget burn')) return 'quota-drain';
   if (normalized.includes('rate limiting abuse') || normalized.includes('rate-limiting-abuse') || normalized.includes('excessive requests') || normalized.includes('throttling abuse') || normalized.includes('rate control abuse')) return 'rate-limiting-abuse';
@@ -340,6 +349,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('webhook signature bypass') || normalized.includes('webhook-signature-bypass') || normalized.includes('missing hmac verification') || normalized.includes('replayed webhook') || normalized.includes('unsigned payload')) return 'webhook-signature-bypass';
   if (normalized.includes('shell command injection') || normalized.includes('shell-command-injection') || normalized.includes('unsanitized exec') || normalized.includes('user command') || normalized.includes('subprocess spawn') || normalized.includes('argument escape')) return 'shell-command-injection';
   if (normalized.includes('unsafe deserialization') || normalized.includes('unsafe-deserialization') || normalized.includes('untrusted object') || normalized.includes('deserialize gadget') || normalized.includes('gadget chain') || normalized.includes('serialized payload')) return 'unsafe-deserialization';
+  if (normalized.includes('open redirect') || normalized.includes('open-redirect') || normalized.includes('unvalidated redirect') || normalized.includes('external redirect') || normalized.includes('phishing redirect') || normalized.includes('redirect parameter')) return 'open-redirect';
   if (normalized.includes('path traversal') || normalized.includes('path-traversal') || normalized.includes('dot dot slash') || normalized.includes('directory escape') || normalized.includes('arbitrary file read') || normalized.includes('file path bypass')) return 'path-traversal';
   if (normalized.includes('file permission drift') || normalized.includes('file-permission-drift') || normalized.includes('world writable') || normalized.includes('chmod change') || normalized.includes('ownership mismatch') || normalized.includes('sensitive file mode')) return 'file-permission-drift';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
@@ -2326,6 +2336,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('file-permission-drift-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture world-writable, chmod-change, and ownership-mismatch dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'ssrf') {
+    addAssumption(assumptions, 'Ssrf behavior is inferred from scenario wording and dependency surface, not measured server-side-request-forgery, internal-metadata-request, or cloud-metadata-endpoint telemetry.');
+  }
+
+  if (scenarioKind === 'ssrf' && input.dependencyCount > 50) {
+    signals.push('ssrf-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture server-side-request-forgery, internal-metadata-request, and cloud-metadata-endpoint dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'open-redirect') {
+    addAssumption(assumptions, 'Open-redirect behavior is inferred from scenario wording and dependency surface, not measured unvalidated-redirect, external-redirect, or phishing-redirect telemetry.');
+  }
+
+  if (scenarioKind === 'open-redirect' && input.dependencyCount > 50) {
+    signals.push('open-redirect-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture unvalidated-redirect, external-redirect, and phishing-redirect dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'graphql-depth-abuse') {
+    addAssumption(assumptions, 'Graphql-depth-abuse behavior is inferred from scenario wording and dependency surface, not measured nested-query-recursion, expensive-resolver, or query-complexity telemetry.');
+  }
+
+  if (scenarioKind === 'graphql-depth-abuse' && input.dependencyCount > 50) {
+    signals.push('graphql-depth-abuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture nested-query-recursion, expensive-resolver, and query-complexity dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'http-request-smuggling') {
+    addAssumption(assumptions, 'Http-request-smuggling behavior is inferred from scenario wording and dependency surface, not measured content-length-transfer-encoding, desync-proxy, or parser-ambiguity telemetry.');
+  }
+
+  if (scenarioKind === 'http-request-smuggling' && input.dependencyCount > 50) {
+    signals.push('http-request-smuggling-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture content-length-transfer-encoding, desync-proxy, and parser-ambiguity dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'host-header-injection') {
+    addAssumption(assumptions, 'Host-header-injection behavior is inferred from scenario wording and dependency surface, not measured poisoned-host-header, password-reset-url, or cache-poisoning telemetry.');
+  }
+
+  if (scenarioKind === 'host-header-injection' && input.dependencyCount > 50) {
+    signals.push('host-header-injection-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture poisoned-host-header, password-reset-url, and cache-poisoning dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
