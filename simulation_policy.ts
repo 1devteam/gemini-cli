@@ -484,6 +484,22 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'http-request-smuggling',
     keywords: ['http request smuggling', 'http-request-smuggling', 'content length transfer encoding', 'desync proxy', 'parser ambiguity'],
   },
+  {
+    kind: 'artifact-poisoning',
+    keywords: ['artifact poisoning', 'artifact-poisoning', 'malicious build artifact', 'tampered package', 'poisoned cache', 'release asset'],
+  },
+  {
+    kind: 'process-injection',
+    keywords: ['process injection', 'process-injection', 'ptrace attach', 'dll injection', 'remote thread', 'memory write'],
+  },
+  {
+    kind: 'branch-protection-bypass',
+    keywords: ['branch protection bypass', 'branch-protection-bypass', 'required review skipped', 'protected branch', 'direct merge'],
+  },
+  {
+    kind: 'package-publish-takeover',
+    keywords: ['package publish takeover', 'package-publish-takeover', 'maintainer account takeover', 'unauthorized release', 'compromised package owner'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -507,7 +523,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('cdn cache poisoning') || normalized.includes('cdn-cache-poisoning') || normalized.includes('cache key confusion') || normalized.includes('poisoned edge response') || normalized.includes('header variation')) return 'cdn-cache-poisoning';
   if (normalized.includes('resource exhaustion') || normalized.includes('resource-exhaustion') || normalized.includes('memory burn') || normalized.includes('cpu saturation') || normalized.includes('disk fill') || normalized.includes('runaway workload')) return 'resource-exhaustion';
   if (normalized.includes('crypto mining') || normalized.includes('crypto-mining') || normalized.includes('unauthorized miner') || normalized.includes('wallet pool') || normalized.includes('hash workload')) return 'crypto-mining';
-  if (normalized.includes('artifact poisoning') || normalized.includes('artifact-poisoning') || normalized.includes('malicious build artifact') || normalized.includes('tampered package') || normalized.includes('poisoned cache') || normalized.includes('release asset')) return 'artifact-poisoning';
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
   if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
@@ -520,14 +535,12 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('orphaned resource') || normalized.includes('orphaned-resource') || normalized.includes('unattached volume') || normalized.includes('idle load balancer') || normalized.includes('stale instance') || normalized.includes('leaked allocation')) return 'orphaned-resource';
   if (normalized.includes('backup exposure') || normalized.includes('backup-exposure') || normalized.includes('public snapshot') || normalized.includes('unsecured backup') || normalized.includes('open archive') || normalized.includes('restore leak')) return 'backup-exposure';
-  if (normalized.includes('process injection') || normalized.includes('process-injection') || normalized.includes('ptrace attach') || normalized.includes('dll injection') || normalized.includes('remote thread') || normalized.includes('memory write')) return 'process-injection';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('tls downgrade') || normalized.includes('tls-downgrade') || normalized.includes('weak cipher') || normalized.includes('protocol fallback') || normalized.includes('old tls version')) return 'tls-downgrade';
   if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
   if (normalized.includes('token expiry') || normalized.includes('token-expiry') || normalized.includes('expired token') || normalized.includes('refresh token') || normalized.includes('session renewal')) return 'token-expiry';
   if (normalized.includes('key compromise') || normalized.includes('key-compromise') || normalized.includes('compromised key') || normalized.includes('credential leak') || normalized.includes('key revoke')) return 'key-compromise';
   if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
-  if (normalized.includes('branch protection bypass') || normalized.includes('branch-protection-bypass') || normalized.includes('required review skipped') || normalized.includes('protected branch') || normalized.includes('direct merge')) return 'branch-protection-bypass';
   if (normalized.includes('codeowner bypass') || normalized.includes('codeowner-bypass') || normalized.includes('missing owner review') || normalized.includes('code owners ignored') || normalized.includes('protected path change')) return 'codeowner-bypass';
   if (normalized.includes('workflow permission abuse') || normalized.includes('workflow-permission-abuse') || normalized.includes('overbroad github token') || normalized.includes('write permission') || normalized.includes('privileged workflow')) return 'workflow-permission-abuse';
   if (normalized.includes('permission boundary') || normalized.includes('permission-boundary') || normalized.includes('least privilege') || normalized.includes('scoped permission') || normalized.includes('access boundary')) return 'permission-boundary';
@@ -582,7 +595,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('path traversal') || normalized.includes('path-traversal') || normalized.includes('dot dot slash') || normalized.includes('directory escape') || normalized.includes('arbitrary file read') || normalized.includes('file path bypass')) return 'path-traversal';
   if (normalized.includes('file permission drift') || normalized.includes('file-permission-drift') || normalized.includes('world writable') || normalized.includes('chmod change') || normalized.includes('ownership mismatch') || normalized.includes('sensitive file mode')) return 'file-permission-drift';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
-  if (normalized.includes('package publish takeover') || normalized.includes('package-publish-takeover') || normalized.includes('maintainer account takeover') || normalized.includes('unauthorized release') || normalized.includes('compromised package owner')) return 'package-publish-takeover';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
   if (normalized.includes('rate limit bypass') || normalized.includes('rate-limit-bypass') || normalized.includes('quota bypass') || normalized.includes('throttle evasion') || normalized.includes('limit abuse')) return 'rate-limit-bypass';
