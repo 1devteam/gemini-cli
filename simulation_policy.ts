@@ -302,25 +302,90 @@ export interface SimulationPolicyResult {
   nextActions: string[];
 }
 
+interface ScenarioClassifierRule {
+  kind: SimulationScenarioKind;
+  keywords: string[];
+}
+
+const scenarioClassifierRules: ScenarioClassifierRule[] = [
+  {
+    kind: 'prompt-injection',
+    keywords: ['prompt injection', 'prompt-injection', 'malicious instruction override', 'system prompt', 'hidden directive'],
+  },
+  {
+    kind: 'tool-call-abuse',
+    keywords: ['tool call abuse', 'tool-call-abuse', 'unauthorized tool invocation', 'excessive tool call', 'unsafe function execution'],
+  },
+  {
+    kind: 'agent-loop-runaway',
+    keywords: ['agent loop runaway', 'agent-loop-runaway', 'infinite agent loop', 'recursive planning', 'repeated self call', 'automation runaway'],
+  },
+  {
+    kind: 'model-output-leakage',
+    keywords: ['model output leakage', 'model-output-leakage', 'sensitive output disclosure', 'hidden context leak', 'private training data'],
+  },
+  {
+    kind: 'unsafe-auto-approval',
+    keywords: ['unsafe auto approval', 'unsafe-auto-approval', 'automatic approval', 'skipped human review', 'autonomous approval', 'dangerous action'],
+  },
+  {
+    kind: 'retrieval-poisoning',
+    keywords: ['retrieval poisoning', 'retrieval-poisoning', 'poisoned document', 'vector store contamination', 'malicious context retrieval'],
+  },
+  {
+    kind: 'policy-override-attempt',
+    keywords: ['policy override attempt', 'policy-override-attempt', 'guardrail bypass', 'safety policy override', 'instruction hierarchy attack'],
+  },
+  {
+    kind: 'autonomous-action-drift',
+    keywords: ['autonomous action drift', 'autonomous-action-drift', 'agent action deviates', 'unsupervised execution', 'goal drift'],
+  },
+  {
+    kind: 'cloudtrail-disablement',
+    keywords: ['cloudtrail disablement', 'cloudtrail-disablement', 'audit trail disabled', 'logging stopped', 'control plane visibility lost'],
+  },
+  {
+    kind: 'kms-key-misuse',
+    keywords: ['kms key misuse', 'kms-key-misuse', 'decrypt permission abuse', 'key policy wildcard', 'encryption key exposure'],
+  },
+  {
+    kind: 'security-group-exposure',
+    keywords: ['security group exposure', 'security-group-exposure', 'open ingress', '0.0.0.0', 'public port', 'firewall rule exposure'],
+  },
+  {
+    kind: 'public-bucket-policy',
+    keywords: ['public bucket policy', 'public-bucket-policy', 'object storage public read', 'bucket acl', 'wildcard principal exposure'],
+  },
+  {
+    kind: 'snapshot-sharing-abuse',
+    keywords: ['snapshot sharing abuse', 'snapshot-sharing-abuse', 'shared volume image', 'cross account snapshot leak'],
+  },
+  {
+    kind: 'serverless-permission-sprawl',
+    keywords: ['serverless permission sprawl', 'serverless-permission-sprawl', 'lambda role wildcard', 'function policy overbroad', 'invoke access'],
+  },
+  {
+    kind: 'managed-identity-abuse',
+    keywords: ['managed identity abuse', 'managed-identity-abuse', 'instance identity token', 'metadata credential', 'role assumption'],
+  },
+  {
+    kind: 'control-plane-throttling',
+    keywords: ['control plane throttling', 'control-plane-throttling', 'api control plane throttle', 'management api saturation', 'request limit'],
+  },
+];
+
+function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
+  return scenarioClassifierRules.find((rule) =>
+    rule.keywords.some((keyword) => normalizedScenario.includes(keyword)),
+  )?.kind;
+}
+
 function classifyScenario(scenario: string): SimulationScenarioKind {
   const normalized = scenario.toLowerCase();
 
-  if (normalized.includes('prompt injection') || normalized.includes('prompt-injection') || normalized.includes('malicious instruction override') || normalized.includes('system prompt') || normalized.includes('hidden directive')) return 'prompt-injection';
-  if (normalized.includes('tool call abuse') || normalized.includes('tool-call-abuse') || normalized.includes('unauthorized tool invocation') || normalized.includes('excessive tool call') || normalized.includes('unsafe function execution')) return 'tool-call-abuse';
-  if (normalized.includes('agent loop runaway') || normalized.includes('agent-loop-runaway') || normalized.includes('infinite agent loop') || normalized.includes('recursive planning') || normalized.includes('repeated self call') || normalized.includes('automation runaway')) return 'agent-loop-runaway';
-  if (normalized.includes('model output leakage') || normalized.includes('model-output-leakage') || normalized.includes('sensitive output disclosure') || normalized.includes('hidden context leak') || normalized.includes('private training data')) return 'model-output-leakage';
-  if (normalized.includes('unsafe auto approval') || normalized.includes('unsafe-auto-approval') || normalized.includes('automatic approval') || normalized.includes('skipped human review') || normalized.includes('autonomous approval') || normalized.includes('dangerous action')) return 'unsafe-auto-approval';
-  if (normalized.includes('retrieval poisoning') || normalized.includes('retrieval-poisoning') || normalized.includes('poisoned document') || normalized.includes('vector store contamination') || normalized.includes('malicious context retrieval')) return 'retrieval-poisoning';
-  if (normalized.includes('policy override attempt') || normalized.includes('policy-override-attempt') || normalized.includes('guardrail bypass') || normalized.includes('safety policy override') || normalized.includes('instruction hierarchy attack')) return 'policy-override-attempt';
-  if (normalized.includes('autonomous action drift') || normalized.includes('autonomous-action-drift') || normalized.includes('agent action deviates') || normalized.includes('unsupervised execution') || normalized.includes('goal drift')) return 'autonomous-action-drift';
-  if (normalized.includes('cloudtrail disablement') || normalized.includes('cloudtrail-disablement') || normalized.includes('audit trail disabled') || normalized.includes('logging stopped') || normalized.includes('control plane visibility lost')) return 'cloudtrail-disablement';
-  if (normalized.includes('kms key misuse') || normalized.includes('kms-key-misuse') || normalized.includes('decrypt permission abuse') || normalized.includes('key policy wildcard') || normalized.includes('encryption key exposure')) return 'kms-key-misuse';
-  if (normalized.includes('security group exposure') || normalized.includes('security-group-exposure') || normalized.includes('open ingress') || normalized.includes('0.0.0.0') || normalized.includes('public port') || normalized.includes('firewall rule exposure')) return 'security-group-exposure';
-  if (normalized.includes('public bucket policy') || normalized.includes('public-bucket-policy') || normalized.includes('object storage public read') || normalized.includes('bucket acl') || normalized.includes('wildcard principal exposure')) return 'public-bucket-policy';
-  if (normalized.includes('snapshot sharing abuse') || normalized.includes('snapshot-sharing-abuse') || normalized.includes('shared volume image') || normalized.includes('cross account snapshot leak')) return 'snapshot-sharing-abuse';
-  if (normalized.includes('serverless permission sprawl') || normalized.includes('serverless-permission-sprawl') || normalized.includes('lambda role wildcard') || normalized.includes('function policy overbroad') || normalized.includes('invoke access')) return 'serverless-permission-sprawl';
-  if (normalized.includes('managed identity abuse') || normalized.includes('managed-identity-abuse') || normalized.includes('instance identity token') || normalized.includes('metadata credential') || normalized.includes('role assumption')) return 'managed-identity-abuse';
-  if (normalized.includes('control plane throttling') || normalized.includes('control-plane-throttling') || normalized.includes('api control plane throttle') || normalized.includes('management api saturation') || normalized.includes('request limit')) return 'control-plane-throttling';
+  const registryMatch = matchScenarioClassifierRule(normalized);
+  if (registryMatch) return registryMatch;
+
   if (normalized.includes('message replay') || normalized.includes('message-replay') || normalized.includes('duplicate message') || normalized.includes('replayed event') || normalized.includes('old offset') || normalized.includes('redelivered payload')) return 'message-replay';
   if (normalized.includes('event ordering drift') || normalized.includes('event-ordering-drift') || normalized.includes('out of order event') || normalized.includes('sequence gap') || normalized.includes('partition reorder')) return 'event-ordering-drift';
   if (normalized.includes('consumer lag abuse') || normalized.includes('consumer-lag-abuse') || normalized.includes('stalled consumer') || normalized.includes('offset lag') || normalized.includes('backlog growth') || normalized.includes('slow subscriber')) return 'consumer-lag-abuse';
