@@ -143,6 +143,11 @@ export type SimulationScenarioKind =
   | 'egress-cost-spike'
   | 'orphaned-resource'
   | 'quota-drain'
+  | 'pipeline-secret-leak'
+  | 'workflow-permission-abuse'
+  | 'artifact-poisoning'
+  | 'runner-compromise'
+  | 'deployment-approval-bypass'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -249,6 +254,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('cdn cache poisoning') || normalized.includes('cdn-cache-poisoning') || normalized.includes('cache key confusion') || normalized.includes('poisoned edge response') || normalized.includes('header variation')) return 'cdn-cache-poisoning';
   if (normalized.includes('resource exhaustion') || normalized.includes('resource-exhaustion') || normalized.includes('memory burn') || normalized.includes('cpu saturation') || normalized.includes('disk fill') || normalized.includes('runaway workload')) return 'resource-exhaustion';
   if (normalized.includes('crypto mining') || normalized.includes('crypto-mining') || normalized.includes('unauthorized miner') || normalized.includes('wallet pool') || normalized.includes('hash workload')) return 'crypto-mining';
+  if (normalized.includes('artifact poisoning') || normalized.includes('artifact-poisoning') || normalized.includes('malicious build artifact') || normalized.includes('tampered package') || normalized.includes('poisoned cache') || normalized.includes('release asset')) return 'artifact-poisoning';
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
   if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
@@ -267,6 +273,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('token expiry') || normalized.includes('token-expiry') || normalized.includes('expired token') || normalized.includes('refresh token') || normalized.includes('session renewal')) return 'token-expiry';
   if (normalized.includes('key compromise') || normalized.includes('key-compromise') || normalized.includes('compromised key') || normalized.includes('credential leak') || normalized.includes('key revoke')) return 'key-compromise';
   if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
+  if (normalized.includes('workflow permission abuse') || normalized.includes('workflow-permission-abuse') || normalized.includes('overbroad github token') || normalized.includes('write permission') || normalized.includes('privileged workflow')) return 'workflow-permission-abuse';
   if (normalized.includes('permission boundary') || normalized.includes('permission-boundary') || normalized.includes('least privilege') || normalized.includes('scoped permission') || normalized.includes('access boundary')) return 'permission-boundary';
   if (normalized.includes('cors policy') || normalized.includes('cors-policy') || normalized.includes('cross origin') || normalized.includes('allowed origin') || normalized.includes('preflight request')) return 'cors-policy';
   if (normalized.includes('csrf protection') || normalized.includes('csrf-protection') || normalized.includes('cross site request forgery') || normalized.includes('csrf token') || normalized.includes('same site cookie')) return 'csrf-protection';
@@ -285,6 +292,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection')) return 'load-shedding';
   if (normalized.includes('service mesh policy') || normalized.includes('service-mesh-policy') || normalized.includes('sidecar mtls') || normalized.includes('traffic policy') || normalized.includes('mesh enforcement')) return 'service-mesh-policy';
   if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
+  if (normalized.includes('pipeline secret leak') || normalized.includes('pipeline-secret-leak') || normalized.includes('ci secret exposed') || normalized.includes('masked variable printed') || normalized.includes('build log')) return 'pipeline-secret-leak';
   if (normalized.includes('log secret exposure') || normalized.includes('log-secret-exposure') || normalized.includes('api key in logs') || normalized.includes('credential dump') || normalized.includes('token logged')) return 'log-secret-exposure';
   if (normalized.includes('pii leakage') || normalized.includes('pii-leakage') || normalized.includes('personal data exposure') || normalized.includes('sensitive field disclosure') || normalized.includes('customer identifier')) return 'pii-leakage';
   if (normalized.includes('data retention violation') || normalized.includes('data-retention-violation') || normalized.includes('expired records') || normalized.includes('deletion failure') || normalized.includes('retention policy breach') || normalized.includes('archive overrun')) return 'data-retention-violation';
@@ -293,6 +301,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('promo abuse') || normalized.includes('promo-abuse') || normalized.includes('coupon stacking') || normalized.includes('referral abuse') || normalized.includes('discount exploit') || normalized.includes('free trial farming')) return 'promo-abuse';
   if (normalized.includes('inventory hoarding') || normalized.includes('inventory-hoarding') || normalized.includes('cart stuffing') || normalized.includes('stock reservation abuse') || normalized.includes('checkout bot') || normalized.includes('scarcity')) return 'inventory-hoarding';
   if (normalized.includes('analytics tracking abuse') || normalized.includes('analytics-tracking-abuse') || normalized.includes('consent bypass') || normalized.includes('excessive tracking') || normalized.includes('user fingerprint') || normalized.includes('third party pixel')) return 'analytics-tracking-abuse';
+  if (normalized.includes('runner compromise') || normalized.includes('runner-compromise') || normalized.includes('self hosted runner escape') || normalized.includes('build agent takeover') || normalized.includes('workspace persistence')) return 'runner-compromise';
   if (normalized.includes('runtime detection') || normalized.includes('runtime-detection') || normalized.includes('anomaly detection') || normalized.includes('behavior monitoring') || normalized.includes('intrusion detection')) return 'runtime-detection';
   if (normalized.includes('pod security') || normalized.includes('pod-security') || normalized.includes('restricted pod') || normalized.includes('pod security standard') || normalized.includes('run as non root')) return 'pod-security';
   if (normalized.includes('secrets mount') || normalized.includes('secrets-mount') || normalized.includes('secret volume') || normalized.includes('projected secret') || normalized.includes('secret file permission')) return 'secrets-mount';
@@ -340,6 +349,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
   if (normalized.includes('idempotency') || normalized.includes('idempotent') || normalized.includes('duplicate replay') || normalized.includes('duplicate request') || normalized.includes('dedupe')) return 'idempotency';
   if (normalized.includes('circuit breaker') || normalized.includes('circuit-breaker') || normalized.includes('open circuit') || normalized.includes('half open') || normalized.includes('trip threshold')) return 'circuit-breaker';
+  if (normalized.includes('deployment approval bypass') || normalized.includes('deployment-approval-bypass') || normalized.includes('skipped reviewer') || normalized.includes('environment protection override') || normalized.includes('manual gate')) return 'deployment-approval-bypass';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
@@ -2086,6 +2096,56 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('quota-drain-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture api-quota-exhaustion, service-limit-depletion, and request-budget-burn dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'pipeline-secret-leak') {
+    addAssumption(assumptions, 'Pipeline-secret-leak behavior is inferred from scenario wording and dependency surface, not measured ci-secret-exposed, masked-variable-printed, or build-log telemetry.');
+  }
+
+  if (scenarioKind === 'pipeline-secret-leak' && input.dependencyCount > 50) {
+    signals.push('pipeline-secret-leak-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture ci-secret-exposed, masked-variable-printed, and build-log dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'workflow-permission-abuse') {
+    addAssumption(assumptions, 'Workflow-permission-abuse behavior is inferred from scenario wording and dependency surface, not measured overbroad-github-token, write-permission, or privileged-workflow telemetry.');
+  }
+
+  if (scenarioKind === 'workflow-permission-abuse' && input.dependencyCount > 50) {
+    signals.push('workflow-permission-abuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture overbroad-github-token, write-permission, and privileged-workflow dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'artifact-poisoning') {
+    addAssumption(assumptions, 'Artifact-poisoning behavior is inferred from scenario wording and dependency surface, not measured malicious-build-artifact, tampered-package, or poisoned-cache telemetry.');
+  }
+
+  if (scenarioKind === 'artifact-poisoning' && input.dependencyCount > 50) {
+    signals.push('artifact-poisoning-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture malicious-build-artifact, tampered-package, and poisoned-cache dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'runner-compromise') {
+    addAssumption(assumptions, 'Runner-compromise behavior is inferred from scenario wording and dependency surface, not measured self-hosted-runner-escape, build-agent-takeover, or workspace-persistence telemetry.');
+  }
+
+  if (scenarioKind === 'runner-compromise' && input.dependencyCount > 50) {
+    signals.push('runner-compromise-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture self-hosted-runner-escape, build-agent-takeover, and workspace-persistence dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'deployment-approval-bypass') {
+    addAssumption(assumptions, 'Deployment-approval-bypass behavior is inferred from scenario wording and dependency surface, not measured skipped-reviewer, environment-protection-override, or manual-gate telemetry.');
+  }
+
+  if (scenarioKind === 'deployment-approval-bypass' && input.dependencyCount > 50) {
+    signals.push('deployment-approval-bypass-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture skipped-reviewer, environment-protection-override, and manual-gate dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
