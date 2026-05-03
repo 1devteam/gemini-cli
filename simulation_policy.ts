@@ -500,6 +500,70 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'package-publish-takeover',
     keywords: ['package publish takeover', 'package-publish-takeover', 'maintainer account takeover', 'unauthorized release', 'compromised package owner'],
   },
+  {
+    kind: 'codeowner-bypass',
+    keywords: ['codeowner bypass', 'codeowner-bypass', 'missing owner review', 'code owners ignored', 'protected path change'],
+  },
+  {
+    kind: 'workflow-permission-abuse',
+    keywords: ['workflow permission abuse', 'workflow-permission-abuse', 'overbroad github token', 'write permission', 'privileged workflow'],
+  },
+  {
+    kind: 'registry-token-leak',
+    keywords: ['registry token leak', 'registry-token-leak', 'npm token exposed', 'publish credential', 'package registry access'],
+  },
+  {
+    kind: 'repo-secret-sprawl',
+    keywords: ['repo secret sprawl', 'repo-secret-sprawl', 'committed secret', 'private key checked in', 'credential spread'],
+  },
+  {
+    kind: 'pipeline-secret-leak',
+    keywords: ['pipeline secret leak', 'pipeline-secret-leak', 'ci secret exposed', 'masked variable printed', 'build log'],
+  },
+  {
+    kind: 'runner-compromise',
+    keywords: ['runner compromise', 'runner-compromise', 'self hosted runner escape', 'build agent takeover', 'workspace persistence'],
+  },
+  {
+    kind: 'shell-command-injection',
+    keywords: ['shell command injection', 'shell-command-injection', 'unsanitized exec', 'user command', 'subprocess spawn', 'argument escape'],
+  },
+  {
+    kind: 'unsafe-deserialization',
+    keywords: ['unsafe deserialization', 'unsafe-deserialization', 'untrusted object', 'deserialize gadget', 'gadget chain', 'serialized payload'],
+  },
+  {
+    kind: 'path-traversal',
+    keywords: ['path traversal', 'path-traversal', 'dot dot slash', 'directory escape', 'arbitrary file read', 'file path bypass'],
+  },
+  {
+    kind: 'file-permission-drift',
+    keywords: ['file permission drift', 'file-permission-drift', 'world writable', 'chmod change', 'ownership mismatch', 'sensitive file mode'],
+  },
+  {
+    kind: 'force-push-risk',
+    keywords: ['force push risk', 'force-push-risk', 'history rewrite', 'forced update', 'rewritten main branch'],
+  },
+  {
+    kind: 'malicious-pr',
+    keywords: ['malicious pr', 'malicious-pr', 'untrusted pull request', 'poisoned contribution', 'external contributor payload'],
+  },
+  {
+    kind: 'typosquatting-package',
+    keywords: ['typosquatting package', 'typosquatting-package', 'lookalike package', 'package name confusion', 'misspelled dependency'],
+  },
+  {
+    kind: 'dependency-confusion',
+    keywords: ['dependency confusion', 'dependency-confusion', 'private package shadow', 'higher version public package', 'registry namespace confusion'],
+  },
+  {
+    kind: 'malicious-postinstall',
+    keywords: ['malicious postinstall', 'malicious-postinstall', 'postinstall script', 'install script payload', 'package lifecycle hook'],
+  },
+  {
+    kind: 'deployment-approval-bypass',
+    keywords: ['deployment approval bypass', 'deployment-approval-bypass', 'environment approval skipped', 'manual gate bypass', 'unreviewed production deploy'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -541,8 +605,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('token expiry') || normalized.includes('token-expiry') || normalized.includes('expired token') || normalized.includes('refresh token') || normalized.includes('session renewal')) return 'token-expiry';
   if (normalized.includes('key compromise') || normalized.includes('key-compromise') || normalized.includes('compromised key') || normalized.includes('credential leak') || normalized.includes('key revoke')) return 'key-compromise';
   if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
-  if (normalized.includes('codeowner bypass') || normalized.includes('codeowner-bypass') || normalized.includes('missing owner review') || normalized.includes('code owners ignored') || normalized.includes('protected path change')) return 'codeowner-bypass';
-  if (normalized.includes('workflow permission abuse') || normalized.includes('workflow-permission-abuse') || normalized.includes('overbroad github token') || normalized.includes('write permission') || normalized.includes('privileged workflow')) return 'workflow-permission-abuse';
   if (normalized.includes('permission boundary') || normalized.includes('permission-boundary') || normalized.includes('least privilege') || normalized.includes('scoped permission') || normalized.includes('access boundary')) return 'permission-boundary';
   if (normalized.includes('cors policy') || normalized.includes('cors-policy') || normalized.includes('cross origin') || normalized.includes('allowed origin') || normalized.includes('preflight request')) return 'cors-policy';
   if (normalized.includes('csrf protection') || normalized.includes('csrf-protection') || normalized.includes('cross site request forgery') || normalized.includes('csrf token') || normalized.includes('same site cookie')) return 'csrf-protection';
@@ -562,9 +624,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection')) return 'load-shedding';
   if (normalized.includes('service mesh policy') || normalized.includes('service-mesh-policy') || normalized.includes('sidecar mtls') || normalized.includes('traffic policy') || normalized.includes('mesh enforcement')) return 'service-mesh-policy';
   if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
-  if (normalized.includes('registry token leak') || normalized.includes('registry-token-leak') || normalized.includes('npm token exposed') || normalized.includes('publish credential') || normalized.includes('package registry access')) return 'registry-token-leak';
-  if (normalized.includes('repo secret sprawl') || normalized.includes('repo-secret-sprawl') || normalized.includes('committed secret') || normalized.includes('private key checked in') || normalized.includes('credential spread')) return 'repo-secret-sprawl';
-  if (normalized.includes('pipeline secret leak') || normalized.includes('pipeline-secret-leak') || normalized.includes('ci secret exposed') || normalized.includes('masked variable printed') || normalized.includes('build log')) return 'pipeline-secret-leak';
   if (normalized.includes('log secret exposure') || normalized.includes('log-secret-exposure') || normalized.includes('api key in logs') || normalized.includes('credential dump') || normalized.includes('token logged')) return 'log-secret-exposure';
   if (normalized.includes('pii leakage') || normalized.includes('pii-leakage') || normalized.includes('personal data exposure') || normalized.includes('sensitive field disclosure') || normalized.includes('customer identifier')) return 'pii-leakage';
   if (normalized.includes('data retention violation') || normalized.includes('data-retention-violation') || normalized.includes('expired records') || normalized.includes('deletion failure') || normalized.includes('retention policy breach') || normalized.includes('archive overrun')) return 'data-retention-violation';
@@ -573,7 +632,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('promo abuse') || normalized.includes('promo-abuse') || normalized.includes('coupon stacking') || normalized.includes('referral abuse') || normalized.includes('discount exploit') || normalized.includes('free trial farming')) return 'promo-abuse';
   if (normalized.includes('inventory hoarding') || normalized.includes('inventory-hoarding') || normalized.includes('cart stuffing') || normalized.includes('stock reservation abuse') || normalized.includes('checkout bot') || normalized.includes('scarcity')) return 'inventory-hoarding';
   if (normalized.includes('analytics tracking abuse') || normalized.includes('analytics-tracking-abuse') || normalized.includes('consent bypass') || normalized.includes('excessive tracking') || normalized.includes('user fingerprint') || normalized.includes('third party pixel')) return 'analytics-tracking-abuse';
-  if (normalized.includes('runner compromise') || normalized.includes('runner-compromise') || normalized.includes('self hosted runner escape') || normalized.includes('build agent takeover') || normalized.includes('workspace persistence')) return 'runner-compromise';
   if (normalized.includes('runtime detection') || normalized.includes('runtime-detection') || normalized.includes('anomaly detection') || normalized.includes('behavior monitoring') || normalized.includes('intrusion detection')) return 'runtime-detection';
   if (normalized.includes('pod security') || normalized.includes('pod-security') || normalized.includes('restricted pod') || normalized.includes('pod security standard') || normalized.includes('run as non root')) return 'pod-security';
   if (normalized.includes('secrets mount') || normalized.includes('secrets-mount') || normalized.includes('secret volume') || normalized.includes('projected secret') || normalized.includes('secret file permission')) return 'secrets-mount';
@@ -590,10 +648,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('rate limiting abuse') || normalized.includes('rate-limiting-abuse') || normalized.includes('excessive requests') || normalized.includes('throttling abuse') || normalized.includes('rate control abuse')) return 'rate-limiting-abuse';
   if (normalized.includes('oauth misuse') || normalized.includes('oauth-misuse') || normalized.includes('redirect uri abuse') || normalized.includes('weak scope') || normalized.includes('consent flow')) return 'oauth-misuse';
   if (normalized.includes('webhook signature bypass') || normalized.includes('webhook-signature-bypass') || normalized.includes('missing hmac verification') || normalized.includes('replayed webhook') || normalized.includes('unsigned payload')) return 'webhook-signature-bypass';
-  if (normalized.includes('shell command injection') || normalized.includes('shell-command-injection') || normalized.includes('unsanitized exec') || normalized.includes('user command') || normalized.includes('subprocess spawn') || normalized.includes('argument escape')) return 'shell-command-injection';
-  if (normalized.includes('unsafe deserialization') || normalized.includes('unsafe-deserialization') || normalized.includes('untrusted object') || normalized.includes('deserialize gadget') || normalized.includes('gadget chain') || normalized.includes('serialized payload')) return 'unsafe-deserialization';
-  if (normalized.includes('path traversal') || normalized.includes('path-traversal') || normalized.includes('dot dot slash') || normalized.includes('directory escape') || normalized.includes('arbitrary file read') || normalized.includes('file path bypass')) return 'path-traversal';
-  if (normalized.includes('file permission drift') || normalized.includes('file-permission-drift') || normalized.includes('world writable') || normalized.includes('chmod change') || normalized.includes('ownership mismatch') || normalized.includes('sensitive file mode')) return 'file-permission-drift';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
@@ -625,12 +679,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
   if (normalized.includes('idempotency') || normalized.includes('idempotent') || normalized.includes('duplicate replay') || normalized.includes('duplicate request') || normalized.includes('dedupe')) return 'idempotency';
   if (normalized.includes('circuit breaker') || normalized.includes('circuit-breaker') || normalized.includes('open circuit') || normalized.includes('half open') || normalized.includes('trip threshold')) return 'circuit-breaker';
-  if (normalized.includes('force push risk') || normalized.includes('force-push-risk') || normalized.includes('rewritten history') || normalized.includes('non fast forward') || normalized.includes('branch overwrite') || normalized.includes('commit loss')) return 'force-push-risk';
-  if (normalized.includes('typosquatting package') || normalized.includes('typosquatting-package') || normalized.includes('misspelled dependency') || normalized.includes('lookalike package') || normalized.includes('malicious registry name')) return 'typosquatting-package';
-  if (normalized.includes('dependency confusion') || normalized.includes('dependency-confusion') || normalized.includes('private package shadowed') || normalized.includes('public registry') || normalized.includes('namespace collision')) return 'dependency-confusion';
-  if (normalized.includes('malicious postinstall') || normalized.includes('malicious-postinstall') || normalized.includes('install script') || normalized.includes('package lifecycle hook') || normalized.includes('credential exfiltration')) return 'malicious-postinstall';
-  if (normalized.includes('malicious pr') || normalized.includes('malicious-pr') || normalized.includes('hostile contribution') || normalized.includes('hidden payload') || normalized.includes('review evasion')) return 'malicious-pr';
-  if (normalized.includes('deployment approval bypass') || normalized.includes('deployment-approval-bypass') || normalized.includes('skipped reviewer') || normalized.includes('environment protection override') || normalized.includes('manual gate')) return 'deployment-approval-bypass';
   if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
