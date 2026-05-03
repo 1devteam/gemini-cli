@@ -184,6 +184,14 @@ export type SimulationScenarioKind =
   | 'replay-transaction'
   | 'partial-commit'
   | 'ledger-tampering'
+  | 'message-replay'
+  | 'event-ordering-drift'
+  | 'consumer-lag-abuse'
+  | 'poison-event'
+  | 'schema-poisoning'
+  | 'topic-permission-bypass'
+  | 'dead-letter-flood'
+  | 'event-duplication'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -281,6 +289,14 @@ export interface SimulationPolicyResult {
 function classifyScenario(scenario: string): SimulationScenarioKind {
   const normalized = scenario.toLowerCase();
 
+  if (normalized.includes('message replay') || normalized.includes('message-replay') || normalized.includes('duplicate message') || normalized.includes('replayed event') || normalized.includes('old offset') || normalized.includes('redelivered payload')) return 'message-replay';
+  if (normalized.includes('event ordering drift') || normalized.includes('event-ordering-drift') || normalized.includes('out of order event') || normalized.includes('sequence gap') || normalized.includes('partition reorder')) return 'event-ordering-drift';
+  if (normalized.includes('consumer lag abuse') || normalized.includes('consumer-lag-abuse') || normalized.includes('stalled consumer') || normalized.includes('offset lag') || normalized.includes('backlog growth') || normalized.includes('slow subscriber')) return 'consumer-lag-abuse';
+  if (normalized.includes('poison event') || normalized.includes('poison-event') || normalized.includes('malformed event') || normalized.includes('toxic payload') || normalized.includes('handler crash') || normalized.includes('stream quarantine')) return 'poison-event';
+  if (normalized.includes('schema poisoning') || normalized.includes('schema-poisoning') || normalized.includes('malicious schema evolution') || normalized.includes('incompatible event schema') || normalized.includes('schema registry pollution')) return 'schema-poisoning';
+  if (normalized.includes('topic permission bypass') || normalized.includes('topic-permission-bypass') || normalized.includes('unauthorized publish') || normalized.includes('topic acl skipped') || normalized.includes('broker permission')) return 'topic-permission-bypass';
+  if (normalized.includes('dead letter flood') || normalized.includes('dead-letter-flood') || normalized.includes('dlq flood') || normalized.includes('failed event surge') || normalized.includes('poison backlog') || normalized.includes('dead letter queue pressure')) return 'dead-letter-flood';
+  if (normalized.includes('event duplication') || normalized.includes('event-duplication') || normalized.includes('duplicate event') || normalized.includes('repeated emit') || normalized.includes('producer retry') || normalized.includes('duplicate delivery')) return 'event-duplication';
   if (normalized.includes('double spend') || normalized.includes('double-spend') || normalized.includes('duplicate debit') || normalized.includes('repeated payment') || normalized.includes('balance reuse')) return 'double-spend';
   if (normalized.includes('race condition') || normalized.includes('race-condition') || normalized.includes('concurrent update') || normalized.includes('timing window') || normalized.includes('check then act') || normalized.includes('shared state conflict')) return 'race-condition';
   if (normalized.includes('lost update') || normalized.includes('lost-update') || normalized.includes('overwrite concurrent write') || normalized.includes('stale version') || normalized.includes('missing compare and swap')) return 'lost-update';
@@ -2578,6 +2594,86 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('ledger-tampering-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture audit-ledger-mutation, balance-history-altered, and transaction-log-rewrite dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'message-replay') {
+    addAssumption(assumptions, 'Message-replay behavior is inferred from scenario wording and dependency surface, not measured duplicate-message, replayed-event, or redelivered-payload telemetry.');
+  }
+
+  if (scenarioKind === 'message-replay' && input.dependencyCount > 50) {
+    signals.push('message-replay-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture duplicate-message, replayed-event, and redelivered-payload dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'event-ordering-drift') {
+    addAssumption(assumptions, 'Event-ordering-drift behavior is inferred from scenario wording and dependency surface, not measured out-of-order-event, sequence-gap, or partition-reorder telemetry.');
+  }
+
+  if (scenarioKind === 'event-ordering-drift' && input.dependencyCount > 50) {
+    signals.push('event-ordering-drift-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture out-of-order-event, sequence-gap, and partition-reorder dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'consumer-lag-abuse') {
+    addAssumption(assumptions, 'Consumer-lag-abuse behavior is inferred from scenario wording and dependency surface, not measured stalled-consumer, offset-lag, or slow-subscriber telemetry.');
+  }
+
+  if (scenarioKind === 'consumer-lag-abuse' && input.dependencyCount > 50) {
+    signals.push('consumer-lag-abuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture stalled-consumer, offset-lag, and slow-subscriber dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'poison-event') {
+    addAssumption(assumptions, 'Poison-event behavior is inferred from scenario wording and dependency surface, not measured malformed-event, toxic-payload, or handler-crash telemetry.');
+  }
+
+  if (scenarioKind === 'poison-event' && input.dependencyCount > 50) {
+    signals.push('poison-event-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture malformed-event, toxic-payload, and handler-crash dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'schema-poisoning') {
+    addAssumption(assumptions, 'Schema-poisoning behavior is inferred from scenario wording and dependency surface, not measured malicious-schema-evolution, incompatible-event-schema, or schema-registry-pollution telemetry.');
+  }
+
+  if (scenarioKind === 'schema-poisoning' && input.dependencyCount > 50) {
+    signals.push('schema-poisoning-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture malicious-schema-evolution, incompatible-event-schema, and schema-registry-pollution dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'topic-permission-bypass') {
+    addAssumption(assumptions, 'Topic-permission-bypass behavior is inferred from scenario wording and dependency surface, not measured unauthorized-publish, topic-acl-skipped, or broker-permission telemetry.');
+  }
+
+  if (scenarioKind === 'topic-permission-bypass' && input.dependencyCount > 50) {
+    signals.push('topic-permission-bypass-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture unauthorized-publish, topic-acl-skipped, and broker-permission dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'dead-letter-flood') {
+    addAssumption(assumptions, 'Dead-letter-flood behavior is inferred from scenario wording and dependency surface, not measured dlq-flood, failed-event-surge, or poison-backlog telemetry.');
+  }
+
+  if (scenarioKind === 'dead-letter-flood' && input.dependencyCount > 50) {
+    signals.push('dead-letter-flood-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture dlq-flood, failed-event-surge, and poison-backlog dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'event-duplication') {
+    addAssumption(assumptions, 'Event-duplication behavior is inferred from scenario wording and dependency surface, not measured duplicate-event, repeated-emit, or duplicate-delivery telemetry.');
+  }
+
+  if (scenarioKind === 'event-duplication' && input.dependencyCount > 50) {
+    signals.push('event-duplication-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture duplicate-event, repeated-emit, and duplicate-delivery dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
