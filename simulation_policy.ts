@@ -192,6 +192,14 @@ export type SimulationScenarioKind =
   | 'topic-permission-bypass'
   | 'dead-letter-flood'
   | 'event-duplication'
+  | 'cloudtrail-disablement'
+  | 'kms-key-misuse'
+  | 'security-group-exposure'
+  | 'public-bucket-policy'
+  | 'snapshot-sharing-abuse'
+  | 'serverless-permission-sprawl'
+  | 'managed-identity-abuse'
+  | 'control-plane-throttling'
   | 'general';
 export type SimulationDecision = 'proceed' | 'proceed-with-caution' | 'block-until-reviewed';
 export type SimulationEvidenceBasis = 'environment-profile' | 'dependency-summary' | 'scenario-keyword' | 'inferred-policy';
@@ -289,6 +297,14 @@ export interface SimulationPolicyResult {
 function classifyScenario(scenario: string): SimulationScenarioKind {
   const normalized = scenario.toLowerCase();
 
+  if (normalized.includes('cloudtrail disablement') || normalized.includes('cloudtrail-disablement') || normalized.includes('audit trail disabled') || normalized.includes('logging stopped') || normalized.includes('control plane visibility lost')) return 'cloudtrail-disablement';
+  if (normalized.includes('kms key misuse') || normalized.includes('kms-key-misuse') || normalized.includes('decrypt permission abuse') || normalized.includes('key policy wildcard') || normalized.includes('encryption key exposure')) return 'kms-key-misuse';
+  if (normalized.includes('security group exposure') || normalized.includes('security-group-exposure') || normalized.includes('open ingress') || normalized.includes('0.0.0.0') || normalized.includes('public port') || normalized.includes('firewall rule exposure')) return 'security-group-exposure';
+  if (normalized.includes('public bucket policy') || normalized.includes('public-bucket-policy') || normalized.includes('object storage public read') || normalized.includes('bucket acl') || normalized.includes('wildcard principal exposure')) return 'public-bucket-policy';
+  if (normalized.includes('snapshot sharing abuse') || normalized.includes('snapshot-sharing-abuse') || normalized.includes('shared volume image') || normalized.includes('cross account snapshot leak')) return 'snapshot-sharing-abuse';
+  if (normalized.includes('serverless permission sprawl') || normalized.includes('serverless-permission-sprawl') || normalized.includes('lambda role wildcard') || normalized.includes('function policy overbroad') || normalized.includes('invoke access')) return 'serverless-permission-sprawl';
+  if (normalized.includes('managed identity abuse') || normalized.includes('managed-identity-abuse') || normalized.includes('instance identity token') || normalized.includes('metadata credential') || normalized.includes('role assumption')) return 'managed-identity-abuse';
+  if (normalized.includes('control plane throttling') || normalized.includes('control-plane-throttling') || normalized.includes('api control plane throttle') || normalized.includes('management api saturation') || normalized.includes('request limit')) return 'control-plane-throttling';
   if (normalized.includes('message replay') || normalized.includes('message-replay') || normalized.includes('duplicate message') || normalized.includes('replayed event') || normalized.includes('old offset') || normalized.includes('redelivered payload')) return 'message-replay';
   if (normalized.includes('event ordering drift') || normalized.includes('event-ordering-drift') || normalized.includes('out of order event') || normalized.includes('sequence gap') || normalized.includes('partition reorder')) return 'event-ordering-drift';
   if (normalized.includes('consumer lag abuse') || normalized.includes('consumer-lag-abuse') || normalized.includes('stalled consumer') || normalized.includes('offset lag') || normalized.includes('backlog growth') || normalized.includes('slow subscriber')) return 'consumer-lag-abuse';
@@ -2674,6 +2690,86 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     signals.push('event-duplication-dependency-pressure');
     addEvidence(evidenceBasis, 'dependency-summary');
     recommendations.push('Capture duplicate-event, repeated-emit, and duplicate-delivery dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'cloudtrail-disablement') {
+    addAssumption(assumptions, 'Cloudtrail-disablement behavior is inferred from scenario wording and dependency surface, not measured audit-trail-disabled, logging-stopped, or control-plane-visibility telemetry.');
+  }
+
+  if (scenarioKind === 'cloudtrail-disablement' && input.dependencyCount > 50) {
+    signals.push('cloudtrail-disablement-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture audit-trail-disabled, logging-stopped, and control-plane-visibility dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'kms-key-misuse') {
+    addAssumption(assumptions, 'Kms-key-misuse behavior is inferred from scenario wording and dependency surface, not measured decrypt-permission-abuse, key-policy-wildcard, or encryption-key-exposure telemetry.');
+  }
+
+  if (scenarioKind === 'kms-key-misuse' && input.dependencyCount > 50) {
+    signals.push('kms-key-misuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture decrypt-permission-abuse, key-policy-wildcard, and encryption-key-exposure dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'security-group-exposure') {
+    addAssumption(assumptions, 'Security-group-exposure behavior is inferred from scenario wording and dependency surface, not measured open-ingress, public-port, or firewall-rule-exposure telemetry.');
+  }
+
+  if (scenarioKind === 'security-group-exposure' && input.dependencyCount > 50) {
+    signals.push('security-group-exposure-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture open-ingress, public-port, and firewall-rule-exposure dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'public-bucket-policy') {
+    addAssumption(assumptions, 'Public-bucket-policy behavior is inferred from scenario wording and dependency surface, not measured object-storage-public-read, bucket-acl, or wildcard-principal-exposure telemetry.');
+  }
+
+  if (scenarioKind === 'public-bucket-policy' && input.dependencyCount > 50) {
+    signals.push('public-bucket-policy-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture object-storage-public-read, bucket-acl, and wildcard-principal-exposure dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'snapshot-sharing-abuse') {
+    addAssumption(assumptions, 'Snapshot-sharing-abuse behavior is inferred from scenario wording and dependency surface, not measured public-snapshot, shared-volume-image, or cross-account-snapshot-leak telemetry.');
+  }
+
+  if (scenarioKind === 'snapshot-sharing-abuse' && input.dependencyCount > 50) {
+    signals.push('snapshot-sharing-abuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture public-snapshot, shared-volume-image, and cross-account-snapshot-leak dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'serverless-permission-sprawl') {
+    addAssumption(assumptions, 'Serverless-permission-sprawl behavior is inferred from scenario wording and dependency surface, not measured lambda-role-wildcard, function-policy-overbroad, or invoke-access telemetry.');
+  }
+
+  if (scenarioKind === 'serverless-permission-sprawl' && input.dependencyCount > 50) {
+    signals.push('serverless-permission-sprawl-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture lambda-role-wildcard, function-policy-overbroad, and invoke-access dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'managed-identity-abuse') {
+    addAssumption(assumptions, 'Managed-identity-abuse behavior is inferred from scenario wording and dependency surface, not measured instance-identity-token, metadata-credential, or role-assumption telemetry.');
+  }
+
+  if (scenarioKind === 'managed-identity-abuse' && input.dependencyCount > 50) {
+    signals.push('managed-identity-abuse-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture instance-identity-token, metadata-credential, and role-assumption dependency metrics before runtime simulation.');
+  }
+
+  if (scenarioKind === 'control-plane-throttling') {
+    addAssumption(assumptions, 'Control-plane-throttling behavior is inferred from scenario wording and dependency surface, not measured api-control-plane-throttle, management-api-saturation, or request-limit telemetry.');
+  }
+
+  if (scenarioKind === 'control-plane-throttling' && input.dependencyCount > 50) {
+    signals.push('control-plane-throttling-dependency-pressure');
+    addEvidence(evidenceBasis, 'dependency-summary');
+    recommendations.push('Capture api-control-plane-throttle, management-api-saturation, and request-limit dependency metrics before runtime simulation.');
   }
 
   if (scenarioKind === 'security') {
