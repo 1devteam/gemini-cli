@@ -436,6 +436,54 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'ledger-tampering',
     keywords: ['ledger tampering', 'ledger-tampering', 'audit ledger mutation', 'balance history altered', 'transaction log rewrite'],
   },
+  {
+    kind: 'idor',
+    keywords: ['idor', 'insecure direct object reference', 'object id manipulation', 'unauthorized record access'],
+  },
+  {
+    kind: 'rbac-bypass',
+    keywords: ['rbac bypass', 'rbac-bypass', 'role check skipped', 'unauthorized role access', 'permission gate bypass'],
+  },
+  {
+    kind: 'abac-policy-drift',
+    keywords: ['abac policy drift', 'abac-policy-drift', 'attribute based access', 'stale attribute', 'mismatched condition', 'policy drift'],
+  },
+  {
+    kind: 'tenant-boundary-break',
+    keywords: ['tenant boundary break', 'tenant-boundary-break', 'cross tenant data access', 'tenant isolation failure', 'organization boundary'],
+  },
+  {
+    kind: 'admin-route-exposure',
+    keywords: ['admin route exposure', 'admin-route-exposure', 'exposed admin endpoint', 'missing admin guard', 'privileged route public'],
+  },
+  {
+    kind: 'privileged-action-replay',
+    keywords: ['privileged action replay', 'privileged-action-replay', 'repeated admin action', 'nonce missing', 'replayed privileged request'],
+  },
+  {
+    kind: 'scope-escalation',
+    keywords: ['scope escalation', 'scope-escalation', 'oauth scope expansion', 'privilege scope widened', 'unauthorized scope grant'],
+  },
+  {
+    kind: 'object-ownership-bypass',
+    keywords: ['object ownership bypass', 'object-ownership-bypass', 'owner check missing', 'resource owner mismatch', 'object access path'],
+  },
+  {
+    kind: 'host-header-injection',
+    keywords: ['host header injection', 'host-header-injection', 'poisoned host header', 'password reset url', 'host header'],
+  },
+  {
+    kind: 'open-redirect',
+    keywords: ['open redirect', 'open-redirect', 'unvalidated redirect', 'external redirect', 'phishing redirect', 'redirect parameter'],
+  },
+  {
+    kind: 'graphql-depth-abuse',
+    keywords: ['graphql depth abuse', 'graphql-depth-abuse', 'nested query recursion', 'expensive resolver', 'query complexity'],
+  },
+  {
+    kind: 'http-request-smuggling',
+    keywords: ['http request smuggling', 'http-request-smuggling', 'content length transfer encoding', 'desync proxy', 'parser ambiguity'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -456,7 +504,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('session fixation') || normalized.includes('session-fixation') || normalized.includes('preset session id') || normalized.includes('cookie reuse') || normalized.includes('login binding')) return 'session-fixation';
   if (normalized.includes('refresh token reuse') || normalized.includes('refresh-token-reuse') || normalized.includes('stolen refresh token') || normalized.includes('token replay') || normalized.includes('rotation failure')) return 'refresh-token-reuse';
   if (normalized.includes('session revocation') || normalized.includes('session-revocation') || normalized.includes('revoked session') || normalized.includes('logout') || normalized.includes('token invalidation')) return 'session-revocation';
-  if (normalized.includes('host header injection') || normalized.includes('host-header-injection') || normalized.includes('poisoned host header') || normalized.includes('password reset url') || normalized.includes('host header')) return 'host-header-injection';
   if (normalized.includes('cdn cache poisoning') || normalized.includes('cdn-cache-poisoning') || normalized.includes('cache key confusion') || normalized.includes('poisoned edge response') || normalized.includes('header variation')) return 'cdn-cache-poisoning';
   if (normalized.includes('resource exhaustion') || normalized.includes('resource-exhaustion') || normalized.includes('memory burn') || normalized.includes('cpu saturation') || normalized.includes('disk fill') || normalized.includes('runaway workload')) return 'resource-exhaustion';
   if (normalized.includes('crypto mining') || normalized.includes('crypto-mining') || normalized.includes('unauthorized miner') || normalized.includes('wallet pool') || normalized.includes('hash workload')) return 'crypto-mining';
@@ -474,16 +521,12 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('orphaned resource') || normalized.includes('orphaned-resource') || normalized.includes('unattached volume') || normalized.includes('idle load balancer') || normalized.includes('stale instance') || normalized.includes('leaked allocation')) return 'orphaned-resource';
   if (normalized.includes('backup exposure') || normalized.includes('backup-exposure') || normalized.includes('public snapshot') || normalized.includes('unsecured backup') || normalized.includes('open archive') || normalized.includes('restore leak')) return 'backup-exposure';
   if (normalized.includes('process injection') || normalized.includes('process-injection') || normalized.includes('ptrace attach') || normalized.includes('dll injection') || normalized.includes('remote thread') || normalized.includes('memory write')) return 'process-injection';
-  if (normalized.includes('object ownership bypass') || normalized.includes('object-ownership-bypass') || normalized.includes('owner check missing') || normalized.includes('resource owner mismatch') || normalized.includes('object access path')) return 'object-ownership-bypass';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
   if (normalized.includes('tls downgrade') || normalized.includes('tls-downgrade') || normalized.includes('weak cipher') || normalized.includes('protocol fallback') || normalized.includes('old tls version')) return 'tls-downgrade';
   if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
   if (normalized.includes('token expiry') || normalized.includes('token-expiry') || normalized.includes('expired token') || normalized.includes('refresh token') || normalized.includes('session renewal')) return 'token-expiry';
   if (normalized.includes('key compromise') || normalized.includes('key-compromise') || normalized.includes('compromised key') || normalized.includes('credential leak') || normalized.includes('key revoke')) return 'key-compromise';
   if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
-  if (normalized.includes('idor') || normalized.includes('insecure direct object reference') || normalized.includes('object id manipulation') || normalized.includes('unauthorized record access')) return 'idor';
-  if (normalized.includes('rbac bypass') || normalized.includes('rbac-bypass') || normalized.includes('role check skipped') || normalized.includes('unauthorized role access') || normalized.includes('permission gate bypass')) return 'rbac-bypass';
-  if (normalized.includes('abac policy drift') || normalized.includes('abac-policy-drift') || normalized.includes('attribute based access') || normalized.includes('stale attribute') || normalized.includes('mismatched condition') || normalized.includes('policy drift')) return 'abac-policy-drift';
   if (normalized.includes('branch protection bypass') || normalized.includes('branch-protection-bypass') || normalized.includes('required review skipped') || normalized.includes('protected branch') || normalized.includes('direct merge')) return 'branch-protection-bypass';
   if (normalized.includes('codeowner bypass') || normalized.includes('codeowner-bypass') || normalized.includes('missing owner review') || normalized.includes('code owners ignored') || normalized.includes('protected path change')) return 'codeowner-bypass';
   if (normalized.includes('workflow permission abuse') || normalized.includes('workflow-permission-abuse') || normalized.includes('overbroad github token') || normalized.includes('write permission') || normalized.includes('privileged workflow')) return 'workflow-permission-abuse';
@@ -525,15 +568,10 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('sandbox escape') || normalized.includes('sandbox-escape') || normalized.includes('container breakout') || normalized.includes('namespace escape') || normalized.includes('isolation bypass')) return 'sandbox-escape';
   if (normalized.includes('iam misconfiguration') || normalized.includes('iam-misconfiguration') || normalized.includes('overly permissive role') || normalized.includes('wildcard policy') || normalized.includes('access grant')) return 'iam-misconfiguration';
   if (normalized.includes('cross account access') || normalized.includes('cross-account-access') || normalized.includes('external account') || normalized.includes('trust boundary') || normalized.includes('assume role')) return 'cross-account-access';
-  if (normalized.includes('admin route exposure') || normalized.includes('admin-route-exposure') || normalized.includes('exposed admin endpoint') || normalized.includes('missing admin guard') || normalized.includes('privileged route public')) return 'admin-route-exposure';
-  if (normalized.includes('privileged action replay') || normalized.includes('privileged-action-replay') || normalized.includes('repeated admin action') || normalized.includes('nonce missing') || normalized.includes('replayed privileged request')) return 'privileged-action-replay';
-  if (normalized.includes('scope escalation') || normalized.includes('scope-escalation') || normalized.includes('oauth scope expansion') || normalized.includes('privilege scope widened') || normalized.includes('unauthorized scope grant')) return 'scope-escalation';
   if (normalized.includes('credential stuffing') || normalized.includes('credential-stuffing') || normalized.includes('reused password') || normalized.includes('login spray') || normalized.includes('breached credential') || normalized.includes('automated login')) return 'credential-stuffing';
   if (normalized.includes('mfa bypass') || normalized.includes('mfa-bypass') || normalized.includes('push fatigue') || normalized.includes('one time code interception') || normalized.includes('second factor downgrade')) return 'mfa-bypass';
   if (normalized.includes('jwt claim tampering') || normalized.includes('jwt-claim-tampering') || normalized.includes('unsigned token') || normalized.includes('altered audience') || normalized.includes('modified issuer') || normalized.includes('privilege claim')) return 'jwt-claim-tampering';
   if (normalized.includes('account enumeration') || normalized.includes('account-enumeration') || normalized.includes('username probing') || normalized.includes('login error oracle') || normalized.includes('email discovery')) return 'account-enumeration';
-  if (normalized.includes('graphql depth abuse') || normalized.includes('graphql-depth-abuse') || normalized.includes('nested query recursion') || normalized.includes('expensive resolver') || normalized.includes('query complexity')) return 'graphql-depth-abuse';
-  if (normalized.includes('http request smuggling') || normalized.includes('http-request-smuggling') || normalized.includes('content length transfer encoding') || normalized.includes('desync proxy') || normalized.includes('parser ambiguity')) return 'http-request-smuggling';
   if (normalized.includes('api gateway security') || normalized.includes('api-gateway-security') || normalized.includes('gateway auth layer') || normalized.includes('request validation') || normalized.includes('gateway security')) return 'api-gateway-security';
   if (normalized.includes('quota drain') || normalized.includes('quota-drain') || normalized.includes('api quota exhaustion') || normalized.includes('service limit depletion') || normalized.includes('request budget burn')) return 'quota-drain';
   if (normalized.includes('rate limiting abuse') || normalized.includes('rate-limiting-abuse') || normalized.includes('excessive requests') || normalized.includes('throttling abuse') || normalized.includes('rate control abuse')) return 'rate-limiting-abuse';
@@ -541,7 +579,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('webhook signature bypass') || normalized.includes('webhook-signature-bypass') || normalized.includes('missing hmac verification') || normalized.includes('replayed webhook') || normalized.includes('unsigned payload')) return 'webhook-signature-bypass';
   if (normalized.includes('shell command injection') || normalized.includes('shell-command-injection') || normalized.includes('unsanitized exec') || normalized.includes('user command') || normalized.includes('subprocess spawn') || normalized.includes('argument escape')) return 'shell-command-injection';
   if (normalized.includes('unsafe deserialization') || normalized.includes('unsafe-deserialization') || normalized.includes('untrusted object') || normalized.includes('deserialize gadget') || normalized.includes('gadget chain') || normalized.includes('serialized payload')) return 'unsafe-deserialization';
-  if (normalized.includes('open redirect') || normalized.includes('open-redirect') || normalized.includes('unvalidated redirect') || normalized.includes('external redirect') || normalized.includes('phishing redirect') || normalized.includes('redirect parameter')) return 'open-redirect';
   if (normalized.includes('path traversal') || normalized.includes('path-traversal') || normalized.includes('dot dot slash') || normalized.includes('directory escape') || normalized.includes('arbitrary file read') || normalized.includes('file path bypass')) return 'path-traversal';
   if (normalized.includes('file permission drift') || normalized.includes('file-permission-drift') || normalized.includes('world writable') || normalized.includes('chmod change') || normalized.includes('ownership mismatch') || normalized.includes('sensitive file mode')) return 'file-permission-drift';
   if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
@@ -560,7 +597,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
   if (normalized.includes('rollback') || normalized.includes('roll back') || normalized.includes('revert')) return 'rollback';
   if (normalized.includes('migration') || normalized.includes('migrate') || normalized.includes('schema change')) return 'migration';
-  if (normalized.includes('tenant boundary break') || normalized.includes('tenant-boundary-break') || normalized.includes('cross tenant data access') || normalized.includes('tenant isolation failure') || normalized.includes('organization boundary')) return 'tenant-boundary-break';
   if (normalized.includes('multi-tenant') || normalized.includes('multitenant') || normalized.includes('tenant isolation') || normalized.includes('tenant')) return 'multi-tenant';
   if (normalized.includes('scheduler') || normalized.includes('schedule') || normalized.includes('cron') || normalized.includes('job')) return 'scheduler';
   if (normalized.includes('webhook') || normalized.includes('callback') || normalized.includes('event delivery') || normalized.includes('endpoint')) return 'webhook';
