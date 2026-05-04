@@ -73,4 +73,54 @@ describe('Simulation policy', () => {
     expect(result.decision).toBe('proceed-with-caution');
     expect(result.signals).toContain('security-dependency-review');
   });
+
+  it('keeps composed simulation trace synchronized with trace fields', () => {
+    const result = evaluateSimulationPolicy({
+      scenario: 'load-test',
+      cpuCount: 1,
+      memoryMB: 2048,
+      dependencyCount: 200,
+    });
+
+    expect(result.simulationTrace.schema).toEqual(result.schemaTrace);
+    expect(result.simulationTrace.policy).toEqual(result.policyTrace);
+    expect(result.simulationTrace.risk).toEqual(result.riskTrace);
+    expect(result.simulationTrace.decision).toEqual(result.decisionTrace);
+    expect(result.simulationTrace.guidance).toEqual(result.guidanceTrace);
+  });
+
+  it('keeps top-level output fields synchronized with detailed traces', () => {
+    const result = evaluateSimulationPolicy({
+      scenario: 'security-test',
+      cpuCount: 2,
+      memoryMB: 2048,
+      dependencyCount: 200,
+    });
+
+    expect(result.schemaTrace.version).toBe(result.outputSchemaVersion);
+    expect(result.schemaTrace.fields).toEqual(result.outputSchema);
+    expect(result.schemaTrace.checksum).toBe(result.schemaChecksum);
+
+    expect(result.policyTrace.version).toBe(result.policyVersion);
+    expect(result.policyTrace.tags).toEqual(result.policyTags);
+    expect(result.policyTrace.checksum).toBe(result.policyChecksum);
+
+    expect(result.riskTrace.riskLevel).toBe(result.riskLevel);
+    expect(result.riskTrace.scenarioKind).toBe(result.scenarioKind);
+    expect(result.riskTrace.signals).toEqual(result.signals);
+    expect(result.riskTrace.evidenceBasis).toEqual(result.evidenceBasis);
+
+    expect(result.decisionTrace.decision).toBe(result.decision);
+    expect(result.decisionTrace.summary).toBe(result.decisionSummary);
+    expect(result.decisionTrace.rationale).toBe(result.decisionRationale);
+    expect(result.decisionTrace.reviewPriority).toBe(result.reviewPriority);
+    expect(result.decisionTrace.confidence).toBe(result.confidence);
+    expect(result.decisionTrace.blockingSignals).toEqual(result.blockingSignals);
+    expect(result.decisionTrace.monitoringSignals).toEqual(result.monitoringSignals);
+    expect(result.decisionTrace.actionPlan).toEqual(result.actionPlan);
+
+    expect(result.guidanceTrace.assumptions).toEqual(result.assumptions);
+    expect(result.guidanceTrace.recommendations).toEqual(result.recommendations);
+    expect(result.guidanceTrace.nextActions).toEqual(result.nextActions);
+  });
 });
