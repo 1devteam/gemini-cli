@@ -968,6 +968,54 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'circuit-breaker',
     keywords: ['circuit breaker', 'circuit-breaker', 'open circuit', 'half open', 'trip threshold'],
   },
+  {
+    kind: 'dead-letter-queue',
+    keywords: ['dead letter queue', 'dead-letter-queue', 'dlq', 'poison message', 'retry exhausted'],
+  },
+  {
+    kind: 'retry',
+    keywords: ['retry storm', 'retry exhausted'],
+  },
+  {
+    kind: 'cold-start',
+    keywords: ['cold-start', 'cold start', 'startup'],
+  },
+  {
+    kind: 'latency',
+    keywords: ['latency', 'tail-latency', 'response-time'],
+  },
+  {
+    kind: 'throughput',
+    keywords: ['throughput', 'request volume', 'rps'],
+  },
+  {
+    kind: 'config',
+    keywords: ['config', 'env'],
+  },
+  {
+    kind: 'poison-pill',
+    keywords: ['poison pill', 'poison-pill', 'malformed message', 'bad payload', 'quarantine'],
+  },
+  {
+    kind: 'load',
+    keywords: ['load-test', 'load test', 'load spike', 'load scenario'],
+  },
+  {
+    kind: 'failure',
+    keywords: ['failure', 'outage'],
+  },
+  {
+    kind: 'scaling',
+    keywords: ['scaling', 'scale'],
+  },
+  {
+    kind: 'security',
+    keywords: ['security'],
+  },
+  {
+    kind: 'general',
+    keywords: ['general'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -982,18 +1030,8 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   const registryMatch = matchScenarioClassifierRule(normalized);
   if (registryMatch) return registryMatch;
 
-  if (normalized.includes('dead letter queue') || normalized.includes('dead-letter-queue') || normalized.includes('dlq') || normalized.includes('poison message') || normalized.includes('retry exhausted')) return 'dead-letter-queue';
-  if (normalized.includes('retry') || normalized.includes('storm')) return 'retry';
-  if (normalized.includes('cold-start') || normalized.includes('cold start') || normalized.includes('startup')) return 'cold-start';
-  if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
-  if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
-  if (normalized.includes('config') || normalized.includes('env')) return 'config';
-  if (normalized.includes('poison pill') || normalized.includes('poison-pill') || normalized.includes('malformed message') || normalized.includes('bad payload') || normalized.includes('quarantine')) return 'poison-pill';
-  if (normalized.includes('load')) return 'load';
-  if (normalized.includes('failure') || normalized.includes('outage')) return 'failure';
-  if (normalized.includes('scaling') || normalized.includes('scale')) return 'scaling';
-  if (normalized.includes('security')) return 'security';
   return 'general';
+
 }
 
 function decide(riskLevel: SimulationRiskLevel): SimulationDecision {
