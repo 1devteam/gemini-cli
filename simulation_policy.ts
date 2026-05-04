@@ -816,6 +816,54 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'request-signing',
     keywords: ['request signing', 'request-signing', 'hmac signature', 'signed request', 'signature validation'],
   },
+  {
+    kind: 'supply-chain',
+    keywords: ['supply chain', 'supply-chain', 'build provenance', 'package integrity', 'dependency trust'],
+  },
+  {
+    kind: 'artifact-integrity',
+    keywords: ['artifact integrity', 'artifact-integrity', 'checksum verification', 'signed artifact', 'provenance'],
+  },
+  {
+    kind: 'dependency-vulnerability',
+    keywords: ['dependency vulnerability', 'dependency-vulnerability', 'vulnerable package', 'cve exposure', 'advisory'],
+  },
+  {
+    kind: 'license-compliance',
+    keywords: ['license compliance', 'license-compliance', 'forbidden license', 'copyleft risk', 'dependency license'],
+  },
+  {
+    kind: 'sbom-generation',
+    keywords: ['sbom generation', 'sbom-generation', 'software bill of materials', 'component inventory', 'dependency inventory'],
+  },
+  {
+    kind: 'container-scan',
+    keywords: ['container scan', 'container-scan', 'image vulnerability', 'layer scan', 'registry assessment'],
+  },
+  {
+    kind: 'image-signing',
+    keywords: ['image signing', 'image-signing', 'signed image', 'signature verification', 'registry trust'],
+  },
+  {
+    kind: 'policy-as-code',
+    keywords: ['policy as code', 'policy-as-code', 'opa rule evaluation', 'policy bundle', 'guardrail'],
+  },
+  {
+    kind: 'admission-control',
+    keywords: ['admission control', 'admission-control', 'admission webhook', 'policy enforcement', 'deny request'],
+  },
+  {
+    kind: 'input-sanitization',
+    keywords: ['input sanitization', 'input-sanitization', 'user input', 'escaping validation', 'injection prevention'],
+  },
+  {
+    kind: 'ssrf',
+    keywords: ['ssrf', 'internal metadata request', 'cloud metadata endpoint'],
+  },
+  {
+    kind: 'rate-limit-bypass',
+    keywords: ['rate limit bypass', 'rate-limit-bypass', 'quota bypass', 'throttle evasion', 'limit abuse'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -843,23 +891,11 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
-  if (normalized.includes('ssrf') || normalized.includes('server side request forgery') || normalized.includes('internal metadata request') || normalized.includes('cloud metadata endpoint')) return 'ssrf';
-  if (normalized.includes('supply chain') || normalized.includes('supply-chain') || normalized.includes('build provenance') || normalized.includes('package integrity') || normalized.includes('dependency trust')) return 'supply-chain';
-  if (normalized.includes('artifact integrity') || normalized.includes('artifact-integrity') || normalized.includes('checksum verification') || normalized.includes('signed artifact') || normalized.includes('provenance')) return 'artifact-integrity';
-  if (normalized.includes('dependency vulnerability') || normalized.includes('dependency-vulnerability') || normalized.includes('vulnerable package') || normalized.includes('cve exposure') || normalized.includes('advisory')) return 'dependency-vulnerability';
-  if (normalized.includes('license compliance') || normalized.includes('license-compliance') || normalized.includes('license audit') || normalized.includes('prohibited license') || normalized.includes('attribution policy')) return 'license-compliance';
-  if (normalized.includes('sbom generation') || normalized.includes('sbom-generation') || normalized.includes('software bill materials') || normalized.includes('component inventory') || normalized.includes('package manifest')) return 'sbom-generation';
-  if (normalized.includes('container scan') || normalized.includes('container-scan') || normalized.includes('image vulnerability') || normalized.includes('layer scan') || normalized.includes('registry assessment')) return 'container-scan';
-  if (normalized.includes('image signing') || normalized.includes('image-signing') || normalized.includes('signed image') || normalized.includes('signature verification') || normalized.includes('registry trust')) return 'image-signing';
-  if (normalized.includes('policy as code') || normalized.includes('policy-as-code') || normalized.includes('opa rule evaluation') || normalized.includes('policy bundle') || normalized.includes('guardrail')) return 'policy-as-code';
-  if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
   if (normalized.includes('mfa bypass') || normalized.includes('mfa-bypass') || normalized.includes('push fatigue') || normalized.includes('one time code interception') || normalized.includes('second factor downgrade')) return 'mfa-bypass';
   if (normalized.includes('jwt claim tampering') || normalized.includes('jwt-claim-tampering') || normalized.includes('unsigned token') || normalized.includes('altered audience') || normalized.includes('modified issuer') || normalized.includes('privilege claim')) return 'jwt-claim-tampering';
   if (normalized.includes('account enumeration') || normalized.includes('account-enumeration') || normalized.includes('username probing') || normalized.includes('login error oracle') || normalized.includes('email discovery')) return 'account-enumeration';
-  if (normalized.includes('input sanitization') || normalized.includes('input-sanitization') || normalized.includes('user input') || normalized.includes('escaping validation') || normalized.includes('injection prevention')) return 'input-sanitization';
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
-  if (normalized.includes('rate limit bypass') || normalized.includes('rate-limit-bypass') || normalized.includes('quota bypass') || normalized.includes('throttle evasion') || normalized.includes('limit abuse')) return 'rate-limit-bypass';
   if (normalized.includes('dependency upgrade') || normalized.includes('dependency-upgrade') || normalized.includes('package bump') || normalized.includes('version compatibility')) return 'dependency-upgrade';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
   if (normalized.includes('migration') || normalized.includes('migrate') || normalized.includes('schema change')) return 'migration';
