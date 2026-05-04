@@ -912,6 +912,62 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'migration',
     keywords: ['migration', 'migrate', 'schema change'],
   },
+  {
+    kind: 'cache',
+    keywords: ['cache', 'invalidation', 'warmup'],
+  },
+  {
+    kind: 'database',
+    keywords: ['database', 'connection pool', 'query latency'],
+  },
+  {
+    kind: 'bulkhead',
+    keywords: ['bulkhead', 'isolation pool', 'resource isolation', 'resource partition'],
+  },
+  {
+    kind: 'saga',
+    keywords: ['saga', 'compensation', 'compensating transaction', 'transaction orchestration'],
+  },
+  {
+    kind: 'outbox',
+    keywords: ['outbox', 'transactional outbox', 'event relay', 'message dispatch'],
+  },
+  {
+    kind: 'network',
+    keywords: ['network', 'upstream timeout', 'partition'],
+  },
+  {
+    kind: 'queue',
+    keywords: ['backlog', 'worker drain'],
+  },
+  {
+    kind: 'storage',
+    keywords: ['storage', 'object store', 'write path'],
+  },
+  {
+    kind: 'backpressure',
+    keywords: ['backpressure', 'flow control', 'pressure signal', 'producer throttle'],
+  },
+  {
+    kind: 'chaos-testing',
+    keywords: ['chaos testing', 'chaos-testing', 'fault injection', 'failure injection'],
+  },
+  {
+    kind: 'regional-failover',
+    keywords: ['regional failover', 'regional-failover', 'cross region', 'traffic shift', 'secondary region'],
+  },
+  {
+    kind: 'data-consistency',
+    keywords: ['data consistency', 'data-consistency', 'eventual consistency', 'replication lag', 'read repair'],
+  },
+  {
+    kind: 'idempotency',
+    keywords: ['idempotency', 'idempotent', 'duplicate replay', 'duplicate request', 'dedupe'],
+  },
+  {
+    kind: 'circuit-breaker',
+    keywords: ['circuit breaker', 'circuit-breaker', 'open circuit', 'half open', 'trip threshold'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -929,20 +985,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('dead letter queue') || normalized.includes('dead-letter-queue') || normalized.includes('dlq') || normalized.includes('poison message') || normalized.includes('retry exhausted')) return 'dead-letter-queue';
   if (normalized.includes('retry') || normalized.includes('storm')) return 'retry';
   if (normalized.includes('cold-start') || normalized.includes('cold start') || normalized.includes('startup')) return 'cold-start';
-  if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
-  if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
-  if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
-  if (normalized.includes('saga') || normalized.includes('compensation') || normalized.includes('compensating transaction') || normalized.includes('transaction orchestration')) return 'saga';
-  if (normalized.includes('outbox') || normalized.includes('transactional outbox') || normalized.includes('event relay') || normalized.includes('message dispatch')) return 'outbox';
-  if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
-  if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
-  if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
-  if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
-  if (normalized.includes('chaos testing') || normalized.includes('chaos-testing') || normalized.includes('fault injection') || normalized.includes('failure injection')) return 'chaos-testing';
-  if (normalized.includes('regional failover') || normalized.includes('regional-failover') || normalized.includes('cross region') || normalized.includes('traffic shift') || normalized.includes('secondary region')) return 'regional-failover';
-  if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
-  if (normalized.includes('idempotency') || normalized.includes('idempotent') || normalized.includes('duplicate replay') || normalized.includes('duplicate request') || normalized.includes('dedupe')) return 'idempotency';
-  if (normalized.includes('circuit breaker') || normalized.includes('circuit-breaker') || normalized.includes('open circuit') || normalized.includes('half open') || normalized.includes('trip threshold')) return 'circuit-breaker';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
   if (normalized.includes('config') || normalized.includes('env')) return 'config';
