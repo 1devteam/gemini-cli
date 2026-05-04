@@ -688,6 +688,70 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'webhook-signature-bypass',
     keywords: ['webhook signature bypass', 'webhook-signature-bypass', 'missing hmac verification', 'replayed webhook', 'unsigned payload'],
   },
+  {
+    kind: 'blue-green',
+    keywords: ['blue green', 'blue-green', 'parallel environment', 'traffic switch'],
+  },
+  {
+    kind: 'canary',
+    keywords: ['canary analysis', 'progressive rollout', 'small percentage traffic'],
+  },
+  {
+    kind: 'rollback',
+    keywords: ['rollback', 'roll back', 'revert deploy', 'previous version'],
+  },
+  {
+    kind: 'deployment',
+    keywords: ['deployment', 'deploy', 'release pipeline'],
+  },
+  {
+    kind: 'feature-flag',
+    keywords: ['feature flag', 'feature-flag', 'flag rollout', 'toggle', 'remote config'],
+  },
+  {
+    kind: 'maintenance-window',
+    keywords: ['maintenance window', 'maintenance-window', 'planned downtime', 'service drain'],
+  },
+  {
+    kind: 'health-check',
+    keywords: ['health check', 'health-check', 'readiness probe', 'liveness probe'],
+  },
+  {
+    kind: 'synthetic-monitoring',
+    keywords: ['synthetic monitoring', 'synthetic-monitoring', 'canary monitor'],
+  },
+  {
+    kind: 'shadow-traffic',
+    keywords: ['shadow traffic', 'shadow-traffic', 'mirrored traffic', 'traffic shadowing'],
+  },
+  {
+    kind: 'traffic-replay',
+    keywords: ['traffic replay', 'traffic-replay', 'replayed requests', 'production replay'],
+  },
+  {
+    kind: 'brownout',
+    keywords: ['brownout', 'graceful degradation', 'feature shedding', 'reduced capability'],
+  },
+  {
+    kind: 'load-shedding',
+    keywords: ['load shedding', 'load-shedding', 'reject excess traffic', 'overload protection'],
+  },
+  {
+    kind: 'capacity-planning',
+    keywords: ['capacity planning', 'capacity-planning', 'forecast demand', 'headroom', 'growth projection'],
+  },
+  {
+    kind: 'observability',
+    keywords: ['observability', 'metrics', 'tracing'],
+  },
+  {
+    kind: 'scheduler',
+    keywords: ['scheduler', 'cron', 'job timing', 'scheduled task'],
+  },
+  {
+    kind: 'disaster-recovery',
+    keywords: ['disaster recovery', 'disaster-recovery', 'restore plan', 'backup restore', 'rto', 'rpo'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -736,7 +800,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('container scan') || normalized.includes('container-scan') || normalized.includes('image vulnerability') || normalized.includes('layer scan') || normalized.includes('registry assessment')) return 'container-scan';
   if (normalized.includes('image signing') || normalized.includes('image-signing') || normalized.includes('signed image') || normalized.includes('signature verification') || normalized.includes('registry trust')) return 'image-signing';
   if (normalized.includes('policy as code') || normalized.includes('policy-as-code') || normalized.includes('opa rule evaluation') || normalized.includes('policy bundle') || normalized.includes('guardrail')) return 'policy-as-code';
-  if (normalized.includes('load shedding') || normalized.includes('load-shedding') || normalized.includes('reject excess traffic') || normalized.includes('overload protection')) return 'load-shedding';
   if (normalized.includes('admission control') || normalized.includes('admission-control') || normalized.includes('admission webhook') || normalized.includes('policy enforcement') || normalized.includes('deny request')) return 'admission-control';
   if (normalized.includes('mfa bypass') || normalized.includes('mfa-bypass') || normalized.includes('push fatigue') || normalized.includes('one time code interception') || normalized.includes('second factor downgrade')) return 'mfa-bypass';
   if (normalized.includes('jwt claim tampering') || normalized.includes('jwt-claim-tampering') || normalized.includes('unsigned token') || normalized.includes('altered audience') || normalized.includes('modified issuer') || normalized.includes('privilege claim')) return 'jwt-claim-tampering';
@@ -745,40 +808,25 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
   if (normalized.includes('rate limit bypass') || normalized.includes('rate-limit-bypass') || normalized.includes('quota bypass') || normalized.includes('throttle evasion') || normalized.includes('limit abuse')) return 'rate-limit-bypass';
-  if (normalized.includes('brownout') || normalized.includes('graceful degradation') || normalized.includes('feature shedding') || normalized.includes('reduced capability')) return 'brownout';
   if (normalized.includes('dependency upgrade') || normalized.includes('dependency-upgrade') || normalized.includes('package bump') || normalized.includes('version compatibility')) return 'dependency-upgrade';
-  if (normalized.includes('maintenance window') || normalized.includes('maintenance-window') || normalized.includes('planned downtime') || normalized.includes('service drain') || normalized.includes('upgrade')) return 'maintenance-window';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
-  if (normalized.includes('synthetic monitoring') || normalized.includes('synthetic-monitoring') || normalized.includes('canary monitor')) return 'synthetic-monitoring';
-  if (normalized.includes('health check') || normalized.includes('health-check') || normalized.includes('readiness probe') || normalized.includes('liveness probe') || normalized.includes('synthetic check')) return 'health-check';
   if (normalized.includes('audit log') || normalized.includes('audit-log') || normalized.includes('immutable audit trail') || normalized.includes('compliance event') || normalized.includes('event history')) return 'audit-log';
-  if (normalized.includes('observability') || normalized.includes('logging') || normalized.includes('metrics') || normalized.includes('tracing')) return 'observability';
-  if (normalized.includes('rollback') || normalized.includes('roll back') || normalized.includes('revert')) return 'rollback';
   if (normalized.includes('migration') || normalized.includes('migrate') || normalized.includes('schema change')) return 'migration';
   if (normalized.includes('multi-tenant') || normalized.includes('multitenant') || normalized.includes('tenant isolation') || normalized.includes('tenant')) return 'multi-tenant';
-  if (normalized.includes('scheduler') || normalized.includes('schedule') || normalized.includes('cron') || normalized.includes('job')) return 'scheduler';
   if (normalized.includes('webhook') || normalized.includes('callback') || normalized.includes('event delivery') || normalized.includes('endpoint')) return 'webhook';
   if (normalized.includes('api-contract') || normalized.includes('api contract') || normalized.includes('openapi') || normalized.includes('schema compatibility')) return 'api-contract';
-  if (normalized.includes('feature-flag') || normalized.includes('feature flag') || normalized.includes('toggle') || normalized.includes('experiment')) return 'feature-flag';
-  if (normalized.includes('canary') || normalized.includes('progressive rollout') || normalized.includes('traffic slice')) return 'canary';
-  if (normalized.includes('blue-green') || normalized.includes('blue green') || normalized.includes('blue environment') || normalized.includes('green environment')) return 'blue-green';
-  if (normalized.includes('traffic replay') || normalized.includes('traffic-replay') || normalized.includes('captured traffic') || normalized.includes('session replay') || normalized.includes('production request')) return 'traffic-replay';
-  if (normalized.includes('shadow-traffic') || normalized.includes('shadow traffic') || normalized.includes('traffic mirror') || normalized.includes('mirrored traffic')) return 'shadow-traffic';
   if (normalized.includes('chaos testing') || normalized.includes('chaos-testing') || normalized.includes('fault injection') || normalized.includes('failure injection')) return 'chaos-testing';
   if (normalized.includes('dns failover') || normalized.includes('dns-failover') || normalized.includes('dns record switch') || normalized.includes('ttl propagation') || normalized.includes('resolver')) return 'dns-failover';
   if (normalized.includes('regional failover') || normalized.includes('regional-failover') || normalized.includes('cross region') || normalized.includes('traffic shift') || normalized.includes('secondary region')) return 'regional-failover';
-  if (normalized.includes('disaster recovery') || normalized.includes('disaster-recovery') || normalized.includes('failover') || normalized.includes('backup recovery')) return 'disaster-recovery';
   if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
   if (normalized.includes('idempotency') || normalized.includes('idempotent') || normalized.includes('duplicate replay') || normalized.includes('duplicate request') || normalized.includes('dedupe')) return 'idempotency';
   if (normalized.includes('circuit breaker') || normalized.includes('circuit-breaker') || normalized.includes('open circuit') || normalized.includes('half open') || normalized.includes('trip threshold')) return 'circuit-breaker';
-  if (normalized.includes('deployment') || normalized.includes('deploy') || normalized.includes('release')) return 'deployment';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
   if (normalized.includes('config drift') || normalized.includes('config-drift') || normalized.includes('configuration mismatch') || normalized.includes('desired state') || normalized.includes('drift detection')) return 'config-drift';
   if (normalized.includes('config') || normalized.includes('env')) return 'config';
   if (normalized.includes('poison pill') || normalized.includes('poison-pill') || normalized.includes('malformed message') || normalized.includes('bad payload') || normalized.includes('quarantine')) return 'poison-pill';
   if (normalized.includes('schema validation') || normalized.includes('schema-validation') || normalized.includes('json schema') || normalized.includes('payload validation') || normalized.includes('contract validation')) return 'schema-validation';
-  if (normalized.includes('capacity planning') || normalized.includes('capacity-planning') || normalized.includes('forecast demand') || normalized.includes('headroom') || normalized.includes('utilization')) return 'capacity-planning';
   if (normalized.includes('load')) return 'load';
   if (normalized.includes('failure') || normalized.includes('outage')) return 'failure';
   if (normalized.includes('scaling') || normalized.includes('scale')) return 'scaling';
