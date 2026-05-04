@@ -1031,7 +1031,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (registryMatch) return registryMatch;
 
   return 'general';
-
 }
 
 function decide(riskLevel: SimulationRiskLevel): SimulationDecision {
