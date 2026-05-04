@@ -864,6 +864,54 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'rate-limit-bypass',
     keywords: ['rate limit bypass', 'rate-limit-bypass', 'quota bypass', 'throttle evasion', 'limit abuse'],
   },
+  {
+    kind: 'session-fixation',
+    keywords: ['session fixation', 'session-fixation', 'preset session id', 'cookie reuse', 'login binding'],
+  },
+  {
+    kind: 'refresh-token-reuse',
+    keywords: ['refresh token reuse', 'refresh-token-reuse', 'stolen refresh token', 'token replay', 'rotation failure'],
+  },
+  {
+    kind: 'mfa-bypass',
+    keywords: ['mfa bypass', 'mfa-bypass', 'push fatigue', 'one time code interception', 'second factor downgrade'],
+  },
+  {
+    kind: 'jwt-claim-tampering',
+    keywords: ['jwt claim tampering', 'jwt-claim-tampering', 'unsigned token', 'altered audience', 'modified issuer', 'privilege claim'],
+  },
+  {
+    kind: 'account-enumeration',
+    keywords: ['account enumeration', 'account-enumeration', 'username probing', 'login error oracle', 'email discovery'],
+  },
+  {
+    kind: 'auth',
+    keywords: ['auth', 'authentication failure', 'authorization failure'],
+  },
+  {
+    kind: 'rate-limit',
+    keywords: ['rate-limit', 'rate limit', 'quota'],
+  },
+  {
+    kind: 'webhook',
+    keywords: ['webhook', 'callback', 'event delivery', 'endpoint'],
+  },
+  {
+    kind: 'api-contract',
+    keywords: ['api-contract', 'api contract', 'openapi', 'schema compatibility'],
+  },
+  {
+    kind: 'multi-tenant',
+    keywords: ['multi-tenant', 'multitenant', 'tenant isolation', 'tenant boundary'],
+  },
+  {
+    kind: 'dependency-upgrade',
+    keywords: ['dependency upgrade', 'dependency-upgrade', 'package bump', 'version compatibility'],
+  },
+  {
+    kind: 'migration',
+    keywords: ['migration', 'migrate', 'schema change'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -881,8 +929,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('dead letter queue') || normalized.includes('dead-letter-queue') || normalized.includes('dlq') || normalized.includes('poison message') || normalized.includes('retry exhausted')) return 'dead-letter-queue';
   if (normalized.includes('retry') || normalized.includes('storm')) return 'retry';
   if (normalized.includes('cold-start') || normalized.includes('cold start') || normalized.includes('startup')) return 'cold-start';
-  if (normalized.includes('session fixation') || normalized.includes('session-fixation') || normalized.includes('preset session id') || normalized.includes('cookie reuse') || normalized.includes('login binding')) return 'session-fixation';
-  if (normalized.includes('refresh token reuse') || normalized.includes('refresh-token-reuse') || normalized.includes('stolen refresh token') || normalized.includes('token replay') || normalized.includes('rotation failure')) return 'refresh-token-reuse';
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
   if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
@@ -891,17 +937,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
-  if (normalized.includes('mfa bypass') || normalized.includes('mfa-bypass') || normalized.includes('push fatigue') || normalized.includes('one time code interception') || normalized.includes('second factor downgrade')) return 'mfa-bypass';
-  if (normalized.includes('jwt claim tampering') || normalized.includes('jwt-claim-tampering') || normalized.includes('unsigned token') || normalized.includes('altered audience') || normalized.includes('modified issuer') || normalized.includes('privilege claim')) return 'jwt-claim-tampering';
-  if (normalized.includes('account enumeration') || normalized.includes('account-enumeration') || normalized.includes('username probing') || normalized.includes('login error oracle') || normalized.includes('email discovery')) return 'account-enumeration';
-  if (normalized.includes('auth') || normalized.includes('token') || normalized.includes('permission')) return 'auth';
   if (normalized.includes('backpressure') || normalized.includes('flow control') || normalized.includes('pressure signal') || normalized.includes('producer throttle')) return 'backpressure';
-  if (normalized.includes('dependency upgrade') || normalized.includes('dependency-upgrade') || normalized.includes('package bump') || normalized.includes('version compatibility')) return 'dependency-upgrade';
-  if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
-  if (normalized.includes('migration') || normalized.includes('migrate') || normalized.includes('schema change')) return 'migration';
-  if (normalized.includes('multi-tenant') || normalized.includes('multitenant') || normalized.includes('tenant isolation') || normalized.includes('tenant')) return 'multi-tenant';
-  if (normalized.includes('webhook') || normalized.includes('callback') || normalized.includes('event delivery') || normalized.includes('endpoint')) return 'webhook';
-  if (normalized.includes('api-contract') || normalized.includes('api contract') || normalized.includes('openapi') || normalized.includes('schema compatibility')) return 'api-contract';
   if (normalized.includes('chaos testing') || normalized.includes('chaos-testing') || normalized.includes('fault injection') || normalized.includes('failure injection')) return 'chaos-testing';
   if (normalized.includes('regional failover') || normalized.includes('regional-failover') || normalized.includes('cross region') || normalized.includes('traffic shift') || normalized.includes('secondary region')) return 'regional-failover';
   if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
