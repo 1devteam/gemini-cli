@@ -752,6 +752,70 @@ const scenarioClassifierRules: ScenarioClassifierRule[] = [
     kind: 'disaster-recovery',
     keywords: ['disaster recovery', 'disaster-recovery', 'restore plan', 'backup restore', 'rto', 'rpo'],
   },
+  {
+    kind: 'secret-rotation',
+    keywords: ['secret rotation', 'secret-rotation', 'credential rollover', 'key rotation'],
+  },
+  {
+    kind: 'schema-validation',
+    keywords: ['schema validation', 'schema-validation', 'json schema', 'payload validation', 'contract validation'],
+  },
+  {
+    kind: 'config-drift',
+    keywords: ['config drift', 'config-drift', 'configuration mismatch', 'desired state', 'drift detection'],
+  },
+  {
+    kind: 'certificate-expiry',
+    keywords: ['certificate expiry', 'certificate-expiry', 'tls certificate', 'certificate renewal', 'cert rotation'],
+  },
+  {
+    kind: 'dns-failover',
+    keywords: ['dns failover', 'dns-failover', 'dns record switch', 'ttl propagation', 'resolver'],
+  },
+  {
+    kind: 'audit-log',
+    keywords: ['audit log', 'audit-log', 'immutable audit trail', 'compliance event', 'event history'],
+  },
+  {
+    kind: 'permission-boundary',
+    keywords: ['permission boundary', 'permission-boundary', 'least privilege boundary', 'policy boundary', 'guardrail permission'],
+  },
+  {
+    kind: 'token-expiry',
+    keywords: ['token expiry', 'token-expiry', 'expired token'],
+  },
+  {
+    kind: 'session-revocation',
+    keywords: ['session revocation', 'session-revocation', 'revoked session', 'logout', 'token invalidation'],
+  },
+  {
+    kind: 'key-compromise',
+    keywords: ['key compromise', 'key-compromise', 'compromised key', 'credential leak', 'key revoke'],
+  },
+  {
+    kind: 'cors-policy',
+    keywords: ['cors policy', 'cors-policy', 'cross origin', 'allowed origin', 'preflight'],
+  },
+  {
+    kind: 'csrf-protection',
+    keywords: ['csrf protection', 'csrf-protection', 'anti csrf', 'same site cookie', 'csrf token'],
+  },
+  {
+    kind: 'xss-defense',
+    keywords: ['xss defense', 'xss-defense', 'content security policy', 'html escaping', 'script injection defense'],
+  },
+  {
+    kind: 'sql-injection',
+    keywords: ['sql injection', 'sql-injection', 'unsafe query', 'parameterized query', 'database injection'],
+  },
+  {
+    kind: 'ssrf-defense',
+    keywords: ['ssrf defense', 'ssrf-defense', 'metadata block', 'egress allowlist'],
+  },
+  {
+    kind: 'request-signing',
+    keywords: ['request signing', 'request-signing', 'hmac signature', 'signed request', 'signature validation'],
+  },
 ];
 
 function matchScenarioClassifierRule(normalizedScenario: string): SimulationScenarioKind | undefined {
@@ -771,7 +835,6 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('cold-start') || normalized.includes('cold start') || normalized.includes('startup')) return 'cold-start';
   if (normalized.includes('session fixation') || normalized.includes('session-fixation') || normalized.includes('preset session id') || normalized.includes('cookie reuse') || normalized.includes('login binding')) return 'session-fixation';
   if (normalized.includes('refresh token reuse') || normalized.includes('refresh-token-reuse') || normalized.includes('stolen refresh token') || normalized.includes('token replay') || normalized.includes('rotation failure')) return 'refresh-token-reuse';
-  if (normalized.includes('session revocation') || normalized.includes('session-revocation') || normalized.includes('revoked session') || normalized.includes('logout') || normalized.includes('token invalidation')) return 'session-revocation';
   if (normalized.includes('cache') || normalized.includes('invalidation') || normalized.includes('warmup')) return 'cache';
   if (normalized.includes('database') || normalized.includes('connection pool') || normalized.includes('query latency')) return 'database';
   if (normalized.includes('bulkhead') || normalized.includes('isolation pool') || normalized.includes('resource isolation') || normalized.includes('resource partition')) return 'bulkhead';
@@ -780,18 +843,7 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('network') || normalized.includes('upstream timeout') || normalized.includes('partition')) return 'network';
   if (normalized.includes('queue') || normalized.includes('backlog') || normalized.includes('worker drain')) return 'queue';
   if (normalized.includes('storage') || normalized.includes('object store') || normalized.includes('write path')) return 'storage';
-  if (normalized.includes('certificate expiry') || normalized.includes('certificate-expiry') || normalized.includes('tls certificate') || normalized.includes('certificate renewal') || normalized.includes('cert rotation')) return 'certificate-expiry';
-  if (normalized.includes('token expiry') || normalized.includes('token-expiry') || normalized.includes('expired token') || normalized.includes('refresh token') || normalized.includes('session renewal')) return 'token-expiry';
-  if (normalized.includes('key compromise') || normalized.includes('key-compromise') || normalized.includes('compromised key') || normalized.includes('credential leak') || normalized.includes('key revoke')) return 'key-compromise';
-  if (normalized.includes('secret rotation') || normalized.includes('secret-rotation') || normalized.includes('credential rollover') || normalized.includes('key rotation') || normalized.includes('token refresh')) return 'secret-rotation';
-  if (normalized.includes('permission boundary') || normalized.includes('permission-boundary') || normalized.includes('least privilege') || normalized.includes('scoped permission') || normalized.includes('access boundary')) return 'permission-boundary';
-  if (normalized.includes('cors policy') || normalized.includes('cors-policy') || normalized.includes('cross origin') || normalized.includes('allowed origin') || normalized.includes('preflight request')) return 'cors-policy';
-  if (normalized.includes('csrf protection') || normalized.includes('csrf-protection') || normalized.includes('cross site request forgery') || normalized.includes('csrf token') || normalized.includes('same site cookie')) return 'csrf-protection';
-  if (normalized.includes('xss defense') || normalized.includes('xss-defense') || normalized.includes('cross site scripting') || normalized.includes('output encoding') || normalized.includes('content security policy')) return 'xss-defense';
-  if (normalized.includes('sql injection') || normalized.includes('sql-injection') || normalized.includes('parameterized query') || normalized.includes('prepared statement')) return 'sql-injection';
-  if (normalized.includes('ssrf defense') || normalized.includes('ssrf-defense') || normalized.includes('metadata block') || normalized.includes('egress allowlist') || normalized.includes('url fetch guard')) return 'ssrf-defense';
   if (normalized.includes('ssrf') || normalized.includes('server side request forgery') || normalized.includes('internal metadata request') || normalized.includes('cloud metadata endpoint')) return 'ssrf';
-  if (normalized.includes('request signing') || normalized.includes('request-signing') || normalized.includes('hmac signature') || normalized.includes('signed request') || normalized.includes('replay protection')) return 'request-signing';
   if (normalized.includes('supply chain') || normalized.includes('supply-chain') || normalized.includes('build provenance') || normalized.includes('package integrity') || normalized.includes('dependency trust')) return 'supply-chain';
   if (normalized.includes('artifact integrity') || normalized.includes('artifact-integrity') || normalized.includes('checksum verification') || normalized.includes('signed artifact') || normalized.includes('provenance')) return 'artifact-integrity';
   if (normalized.includes('dependency vulnerability') || normalized.includes('dependency-vulnerability') || normalized.includes('vulnerable package') || normalized.includes('cve exposure') || normalized.includes('advisory')) return 'dependency-vulnerability';
@@ -810,23 +862,19 @@ function classifyScenario(scenario: string): SimulationScenarioKind {
   if (normalized.includes('rate limit bypass') || normalized.includes('rate-limit-bypass') || normalized.includes('quota bypass') || normalized.includes('throttle evasion') || normalized.includes('limit abuse')) return 'rate-limit-bypass';
   if (normalized.includes('dependency upgrade') || normalized.includes('dependency-upgrade') || normalized.includes('package bump') || normalized.includes('version compatibility')) return 'dependency-upgrade';
   if (normalized.includes('rate-limit') || normalized.includes('rate limit') || normalized.includes('throttl') || normalized.includes('quota')) return 'rate-limit';
-  if (normalized.includes('audit log') || normalized.includes('audit-log') || normalized.includes('immutable audit trail') || normalized.includes('compliance event') || normalized.includes('event history')) return 'audit-log';
   if (normalized.includes('migration') || normalized.includes('migrate') || normalized.includes('schema change')) return 'migration';
   if (normalized.includes('multi-tenant') || normalized.includes('multitenant') || normalized.includes('tenant isolation') || normalized.includes('tenant')) return 'multi-tenant';
   if (normalized.includes('webhook') || normalized.includes('callback') || normalized.includes('event delivery') || normalized.includes('endpoint')) return 'webhook';
   if (normalized.includes('api-contract') || normalized.includes('api contract') || normalized.includes('openapi') || normalized.includes('schema compatibility')) return 'api-contract';
   if (normalized.includes('chaos testing') || normalized.includes('chaos-testing') || normalized.includes('fault injection') || normalized.includes('failure injection')) return 'chaos-testing';
-  if (normalized.includes('dns failover') || normalized.includes('dns-failover') || normalized.includes('dns record switch') || normalized.includes('ttl propagation') || normalized.includes('resolver')) return 'dns-failover';
   if (normalized.includes('regional failover') || normalized.includes('regional-failover') || normalized.includes('cross region') || normalized.includes('traffic shift') || normalized.includes('secondary region')) return 'regional-failover';
   if (normalized.includes('data consistency') || normalized.includes('data-consistency') || normalized.includes('eventual consistency') || normalized.includes('replication lag') || normalized.includes('read repair')) return 'data-consistency';
   if (normalized.includes('idempotency') || normalized.includes('idempotent') || normalized.includes('duplicate replay') || normalized.includes('duplicate request') || normalized.includes('dedupe')) return 'idempotency';
   if (normalized.includes('circuit breaker') || normalized.includes('circuit-breaker') || normalized.includes('open circuit') || normalized.includes('half open') || normalized.includes('trip threshold')) return 'circuit-breaker';
   if (normalized.includes('latency') || normalized.includes('tail-latency') || normalized.includes('response-time')) return 'latency';
   if (normalized.includes('throughput') || normalized.includes('request volume') || normalized.includes('rps')) return 'throughput';
-  if (normalized.includes('config drift') || normalized.includes('config-drift') || normalized.includes('configuration mismatch') || normalized.includes('desired state') || normalized.includes('drift detection')) return 'config-drift';
   if (normalized.includes('config') || normalized.includes('env')) return 'config';
   if (normalized.includes('poison pill') || normalized.includes('poison-pill') || normalized.includes('malformed message') || normalized.includes('bad payload') || normalized.includes('quarantine')) return 'poison-pill';
-  if (normalized.includes('schema validation') || normalized.includes('schema-validation') || normalized.includes('json schema') || normalized.includes('payload validation') || normalized.includes('contract validation')) return 'schema-validation';
   if (normalized.includes('load')) return 'load';
   if (normalized.includes('failure') || normalized.includes('outage')) return 'failure';
   if (normalized.includes('scaling') || normalized.includes('scale')) return 'scaling';
