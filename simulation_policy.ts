@@ -30,6 +30,11 @@ export const SIMULATION_OUTPUT_SCHEMA = [
   'nextActions',
 ];
 
+import {
+  buildDecisionTrace,
+  buildRiskTrace,
+  buildGuidanceTrace,
+} from './src/simulation/trace/trace_builder.js';
 export type SimulationRiskLevel = 'low' | 'medium' | 'high';
 export type SimulationScenarioKind =
   | 'load'
@@ -1045,9 +1050,6 @@ import {
   selectBlockingSignals,
   selectMonitoringSignals,
   buildActionPlan,
-  buildDecisionTrace,
-  buildRiskTrace,
-  buildGuidanceTrace,
 } from './src/simulation/decision/confidence.js';
 
 function buildSimulationTrace(
