@@ -1,5 +1,5 @@
 import type {
-  SimulationScenarioKind,
+  SimulationDecision,
 } from '../../../simulation_policy.js';
 
 function buildNextActions(decision: SimulationDecision, signals: string[]): string[] {
