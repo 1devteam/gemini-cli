@@ -1,6 +1,4 @@
-<<<<<<< HEAD
-PLACEHOLDER
-=======
+
 export const SIMULATION_POLICY_VERSION = '2026-04-phase3';
 export const SIMULATION_OUTPUT_SCHEMA_VERSION = 'simulation-output-v1';
 export const SIMULATION_OUTPUT_SCHEMA = [
@@ -3109,4 +3107,3 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     nextActions,
   };
 }
->>>>>>> 9d1b818 (refactor(simulation): apply environment pressure rules)
