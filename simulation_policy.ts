@@ -1153,31 +1153,19 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     addAssumption(assumptions, 'Load scenario risk is inferred from available memory and dependency surface, not measured throughput.');
   }
 
-  if (scenarioKind === 'load' && input.memoryMB < 8192) {
-    signals.push('load-memory-pressure');
-    addEvidence(evidenceBasis, 'environment-profile');
-    recommendations.push('Avoid load-heavy scenarios on machines with less than 8GB RAM.');
-  }
+  
 
   if (scenarioKind === 'scaling') {
     addAssumption(assumptions, 'Scaling pressure is inferred from CPU count, not live horizontal scaling behavior.');
   }
 
-  if (scenarioKind === 'scaling' && input.cpuCount < 4) {
-    signals.push('scaling-cpu-pressure');
-    addEvidence(evidenceBasis, 'environment-profile');
-    recommendations.push('Use at least 4 CPU cores before scaling simulations.');
-  }
+  
 
   if (scenarioKind === 'latency') {
     addAssumption(assumptions, 'Latency pressure is inferred from CPU availability, not measured response-time percentiles.');
   }
 
-  if (scenarioKind === 'latency' && input.cpuCount < 4) {
-    signals.push('latency-cpu-pressure');
-    addEvidence(evidenceBasis, 'environment-profile');
-    recommendations.push('Capture latency baseline and tail-latency metrics before runtime simulation.');
-  }
+  
 
   if (scenarioKind === 'throughput') {
     addAssumption(assumptions, 'Throughput pressure is inferred from dependency surface, not measured requests per second.');
@@ -1193,11 +1181,7 @@ export function evaluateSimulationPolicy(input: SimulationPolicyInput): Simulati
     addAssumption(assumptions, 'Cold-start pressure is inferred from available memory, not measured initialization latency.');
   }
 
-  if (scenarioKind === 'cold-start' && input.memoryMB < 8192) {
-    signals.push('cold-start-memory-pressure');
-    addEvidence(evidenceBasis, 'environment-profile');
-    recommendations.push('Capture startup baseline and initialization-path metrics before runtime simulation.');
-  }
+  
 
   if (scenarioKind === 'cache') {
     addAssumption(assumptions, 'Cache behavior is inferred from scenario wording and dependency surface, not measured hit rate.');

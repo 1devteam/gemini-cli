@@ -5,6 +5,7 @@ import type {
 
 interface SimulationPressureContext {
   input: SimulationPolicyInput;
+  scenarioKind: string;
 }
 
 interface SimulationPressureRule {
@@ -16,6 +17,35 @@ interface SimulationPressureRule {
 }
 
 const environmentPressureRules: SimulationPressureRule[] = [
+  {
+    id: 'load-memory-pressure',
+    when: ({ input, scenarioKind }) => scenarioKind === 'load' && input.memoryMB < 8192,
+    signal: 'load-memory-pressure',
+    evidence: 'environment-profile',
+    recommendation: 'Increase memory headroom for load conditions.',
+  },
+  {
+    id: 'scaling-cpu-pressure',
+    when: ({ input, scenarioKind }) => scenarioKind === 'scaling' && input.cpuCount < 4,
+    signal: 'scaling-cpu-pressure',
+    evidence: 'environment-profile',
+    recommendation: 'Ensure sufficient CPU for scaling scenarios.',
+  },
+  {
+    id: 'latency-cpu-pressure',
+    when: ({ input, scenarioKind }) => scenarioKind === 'latency' && input.cpuCount < 4,
+    signal: 'latency-cpu-pressure',
+    evidence: 'environment-profile',
+    recommendation: 'Validate latency under CPU-constrained conditions.',
+  },
+  {
+    id: 'cold-start-memory-pressure',
+    when: ({ input, scenarioKind }) => scenarioKind === 'cold-start' && input.memoryMB < 8192,
+    signal: 'cold-start-memory-pressure',
+    evidence: 'environment-profile',
+    recommendation: 'Ensure memory availability during cold starts.',
+  },
+
   {
     id: 'low-cpu',
     when: ({ input }) => input.cpuCount < 2,
@@ -51,6 +81,7 @@ function applyPressureRules(
 
 function applyEnvironmentPressureRules(
   input: SimulationPolicyInput,
+  scenarioKind: string,
   signals: string[],
   evidenceBasis: SimulationEvidenceBasis[],
   recommendations: string[],
@@ -58,7 +89,7 @@ function applyEnvironmentPressureRules(
 ): void {
   applyPressureRules(
     environmentPressureRules,
-    { input },
+    { input, scenarioKind },
     signals,
     evidenceBasis,
     recommendations,
